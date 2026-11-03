@@ -86,13 +86,31 @@ const SourceIcon = ({ type }) => {
   return <span className="src-icon" style={{ background: s.bg, color: s.c }}>{s.icon}</span>;
 };
 
-const Badge = ({ tone = 'neutral', children, dot = false }) => (
-  <span className={`badge badge-${tone}`}>
-    {dot && (
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
-    )}
+/* Badge — tone: neutral | success | info | warning (med) | danger (high) | violet | low */
+const Badge = ({ tone = 'neutral', children, dot = false, title }) => (
+  <span className={`badge badge-${tone}`} title={title}>
+    {dot && <span className="badge-dot" aria-hidden="true" />}
     {children}
   </span>
+);
+
+/* FilterChips — single-select filter with counts. items: [{ key, label, count }] */
+const FilterChips = ({ items, value, onChange, label = 'Filter' }) => (
+  <div className="filter-pills" role="group" aria-label={label}>
+    {items.map(item => (
+      <button
+        key={item.key}
+        type="button"
+        className={`filter-pill${value === item.key ? ' active' : ''}`}
+        aria-pressed={value === item.key}
+        onClick={() => onChange(item.key)}
+      >
+        {item.dot && <span className="filter-pill-dot" style={{ background: item.dot }} aria-hidden="true" />}
+        <span>{item.label}</span>
+        {item.count != null && <span className="filter-pill-count">{item.count}</span>}
+      </button>
+    ))}
+  </div>
 );
 
 /* Button — variant: primary | secondary | ghost | danger | danger-ghost; size: sm.
@@ -182,9 +200,8 @@ function useDialog(ref, onClose, { active = true, initialFocus = true } = {}) {
     const previouslyFocused = document.activeElement;
 
     if (node && initialFocus) {
-      const target = node.querySelector('[data-autofocus]')
-        || node.querySelector('.modal-body ' + FOCUSABLE.split(', ').join(', .modal-body '))
-        || node;
+      const inBody = ['.modal-body', '.drawer-body'].flatMap(b => FOCUSABLE.split(', ').map(f => `${b} ${f}`)).join(', ');
+      const target = node.querySelector('[data-autofocus]') || node.querySelector(inBody) || node;
       requestAnimationFrame(() => {
         if (!node.contains(document.activeElement)) target?.focus?.({ preventScroll: true });
       });
@@ -253,6 +270,31 @@ const Modal = ({ title, subtitle, icon, onClose, children, footer, width, size, 
     </div>
   );
 };
+
+/* Drawer — right-hand panel for secondary workflows (full-screen on phones). */
+const Drawer = ({ title, eyebrow, onClose, children, footer, width = 520 }) => {
+  const ref = useRef(null);
+  const titleId = useId();
+  useDialog(ref, onClose);
+  return (
+    <div className="drawer-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
+      <aside ref={ref} className="drawer" style={{ maxWidth: width }} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
+        <header className="drawer-head">
+          <div style={{ minWidth: 0 }}>
+            {eyebrow && <span className="drawer-eyebrow">{eyebrow}</span>}
+            <h2 id={titleId} className="drawer-title">{title}</h2>
+          </div>
+          <button type="button" className="icon-btn modal-close" onClick={onClose} aria-label="Close panel"><Icons.X size={18} /></button>
+        </header>
+        <div className="drawer-body">{children}</div>
+        {footer && <footer className="drawer-footer">{footer}</footer>}
+      </aside>
+    </div>
+  );
+};
+
+/* File name from API file objects ({ file_name }), browser File objects or plain strings */
+const fileLabel = (f) => (typeof f === 'string' ? f : f?.name ?? f?.file_name ?? f?.filename ?? f?.original_name ?? 'Document');
 
 /* ConfirmDialog — use before destructive or irreversible actions. */
 const ConfirmDialog = ({
@@ -480,7 +522,7 @@ const Toast = ({ message, onDismiss }) => {
 };
 
 export {
-  Icon, Icons, SourceIcon, Badge, Button, StatTile, Progress, ScoreRing, Modal, Toast,
-  useDialog, ConfirmDialog, Field, SearchInput, EmptyState, LoadingState, ErrorState,
+  Icon, Icons, SourceIcon, Badge, FilterChips, Button, StatTile, Progress, ScoreRing, Modal, Toast,
+  useDialog, Drawer, fileLabel, ConfirmDialog, Field, SearchInput, EmptyState, LoadingState, ErrorState,
   RowActions, PageActions, PageActionsProvider,
 };

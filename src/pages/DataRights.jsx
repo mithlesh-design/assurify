@@ -1,5 +1,8 @@
-import { useMemo, useState } from 'react';
-import { Icons } from '../ui';
+import { useMemo, useRef, useState } from 'react';
+import {
+  Badge, Button, EmptyState, Icons, Modal, PageActions, SearchInput, useDialog,
+} from '../ui';
+import { daysUntil, formatDate } from '../lib/format';
 
 const REQUEST_TYPES = [
   'Access to personal data',
@@ -17,7 +20,7 @@ const RIGHT_GUIDANCE = {
   'Access to personal data': 'Provide the prescribed summary of personal data and processing activities, including relevant identities and disclosures, subject to applicable rules and exceptions.',
   'Correction or completion': 'Assess the requested correction, completion, or update against reliable information and propagate changes where required.',
   'Erasure of personal data': 'Assess erasure where the purpose is no longer served or consent is withdrawn, while checking lawful retention requirements and other applicable exceptions.',
-  Grievance: 'Route through the organisation’s published grievance redressal mechanism and record the response and escalation information provided.',
+  Grievance: 'Route through the organization’s published grievance redressal mechanism and record the response and escalation information provided.',
   Nomination: 'Record and verify a nomination for exercise of rights in the circumstances provided under applicable law.',
   'Withdraw consent': 'Route to the relevant consent and processing systems; explain any effect on services and assess processing that may rely on another lawful basis.',
 };
@@ -29,8 +32,8 @@ const INITIAL_REQUESTS = [
     type: 'Access to personal data',
     name: 'Aarav Sharma',
     email: 'aarav.sharma@example.com',
-    received: '20 Oct 2026',
-    due: '19 Nov 2026',
+    received: '2026-10-20',
+    due: '2026-11-19',
     activeStep: 'Identity verification',
     status: 'Identity verification',
     verification: 'Pending',
@@ -48,8 +51,8 @@ const INITIAL_REQUESTS = [
     type: 'Correction or completion',
     name: 'Meera Iyer',
     email: 'meera.iyer@example.com',
-    received: '17 Oct 2026',
-    due: '16 Nov 2026',
+    received: '2026-10-17',
+    due: '2026-11-16',
     activeStep: 'Review requested correction',
     status: 'In review',
     verification: 'Verified',
@@ -59,7 +62,7 @@ const INITIAL_REQUESTS = [
     dataTypes: ['Identity & contact'],
     representative: false,
     outcome: 'Not decided',
-    notes: [{ date: '18 Oct 2026', text: 'Identity verified through the existing authenticated account.' }],
+    notes: [{ date: '2026-10-18', text: 'Identity verified through the existing authenticated account.' }],
   },
   {
     id: 'DPR-2026-016',
@@ -67,8 +70,8 @@ const INITIAL_REQUESTS = [
     type: 'Erasure of personal data',
     name: 'Kabir Nair',
     email: 'kabir.nair@example.com',
-    received: '12 Oct 2026',
-    due: '11 Nov 2026',
+    received: '2026-10-12',
+    due: '2026-11-11',
     activeStep: 'Erasure in progress',
     status: 'Action in progress',
     verification: 'Verified',
@@ -78,7 +81,7 @@ const INITIAL_REQUESTS = [
     dataTypes: ['Marketing preferences', 'Identity & contact'],
     representative: false,
     outcome: 'Not decided',
-    notes: [{ date: '13 Oct 2026', text: 'Retention checks are underway for records that may need to be retained under applicable law.' }],
+    notes: [{ date: '2026-10-13', text: 'Retention checks are underway for records that may need to be retained under applicable law.' }],
   },
   {
     id: 'DPR-2026-015',
@@ -86,8 +89,8 @@ const INITIAL_REQUESTS = [
     type: 'Grievance',
     name: 'Anaya Rao',
     email: 'anaya.rao@example.com',
-    received: '08 Oct 2026',
-    due: '07 Nov 2026',
+    received: '2026-10-08',
+    due: '2026-11-07',
     activeStep: 'Response issued',
     status: 'Completed',
     verification: 'Verified',
@@ -97,7 +100,7 @@ const INITIAL_REQUESTS = [
     dataTypes: ['Identity & contact', 'Account details'],
     representative: false,
     outcome: 'Fulfilled in full',
-    notes: [{ date: '15 Oct 2026', text: 'Response sent to the verified contact address and case closed.' }],
+    notes: [{ date: '2026-10-15', text: 'Response sent to the verified contact address and case closed.' }],
   },
   {
     id: 'DPR-2026-014',
@@ -105,8 +108,8 @@ const INITIAL_REQUESTS = [
     type: 'Access to personal data',
     name: 'Rohan Das',
     email: 'rohan.das@example.com',
-    received: '02 Oct 2026',
-    due: '01 Nov 2026',
+    received: '2026-10-02',
+    due: '2026-11-01',
     activeStep: 'Decline communicated',
     status: 'Declined',
     verification: 'Unable to verify',
@@ -116,7 +119,7 @@ const INITIAL_REQUESTS = [
     dataTypes: ['Identity & contact'],
     representative: true,
     outcome: 'Declined',
-    notes: [{ date: '05 Oct 2026', text: 'Request declined after reasonable verification steps could not confirm the representative’s authority. The response explained how to submit a verifiable request.' }],
+    notes: [{ date: '2026-10-05', text: 'Request declined after reasonable verification steps could not confirm the representative’s authority. The response explained how to submit a verifiable request.' }],
   },
 ];
 
@@ -125,9 +128,24 @@ function localDateValue(date = new Date()) {
 }
 
 function displayDate(value) {
-  if (!value) return '';
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  return value ? formatDate(value, value) : '';
+}
+
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+/* Internal target date with urgency for open cases */
+function TargetDate({ request }) {
+  if (!request.due) return <span className="dt-muted">Set per policy</span>;
+  const open = !['Completed', 'Declined'].includes(request.status);
+  const days = daysUntil(request.due);
+  return (
+    <span className="deadline-cell">
+      <span className="dt-nowrap">{displayDate(request.due)}</span>
+      {open && days != null && (days < 0
+        ? <Badge tone="danger">Overdue {Math.abs(days)}d</Badge>
+        : days <= 7 ? <Badge tone="warning">{days === 0 ? 'Due today' : `Due in ${days}d`}</Badge> : null)}
+    </span>
+  );
 }
 
 function StatusBadge({ status }) {
@@ -136,12 +154,12 @@ function StatusBadge({ status }) {
       : status === 'Awaiting information' ? 'warning'
         : status === 'Identity verification' ? 'violet'
           : 'info';
-  return <span className={`rights-status rights-status-${tone}`}><i />{status}</span>;
+  return <Badge tone={tone} dot>{status}</Badge>;
 }
 
 function VerificationBadge({ verification }) {
-  const tone = verification === 'Verified' ? 'verified' : verification === 'Unable to verify' ? 'failed' : 'pending';
-  return <span className={`rights-verification rights-verification-${tone}`}><i />{verification}</span>;
+  const tone = verification === 'Verified' ? 'success' : verification === 'Unable to verify' ? 'danger' : 'warning';
+  return <Badge tone={tone}>{verification === 'Verified' ? <Icons.Check size={12} /> : null}{verification}</Badge>;
 }
 
 function MetricCard({ icon: Icon, label, value, detail, tone }) {
@@ -154,8 +172,14 @@ function MetricCard({ icon: Icon, label, value, detail, tone }) {
   );
 }
 
-function Field({ label, hint, className = '', children }) {
-  return <label className={`rights-field ${className}`}><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
+function Field({ label, hint, error, required, className = '', children }) {
+  return (
+    <label className={`field ${className}`}>
+      <span className="field-label">{label}{required && <span className="field-required" aria-hidden="true">*</span>}</span>
+      {children}
+      {error ? <span className="field-error" role="alert"><Icons.Alert size={13} />{error}</span> : hint && <small className="field-hint">{hint}</small>}
+    </label>
+  );
 }
 
 function MultiSelect({ label, options, value, onChange, hint }) {
@@ -166,13 +190,16 @@ function MultiSelect({ label, options, value, onChange, hint }) {
     <fieldset className="rights-multiselect">
       <legend>{label}</legend>
       {hint && <p>{hint}</p>}
-      <div>{options.map(item => <button type="button" key={item} className={value.includes(item) ? 'selected' : ''} onClick={() => toggle(item)}><span>{value.includes(item) && <Icons.Check size={12} />}</span>{item}</button>)}</div>
+      <div>{options.map(item => <button type="button" key={item} className={value.includes(item) ? 'selected' : ''} aria-pressed={value.includes(item)} onClick={() => toggle(item)}><span>{value.includes(item) && <Icons.Check size={12} />}</span>{item}</button>)}</div>
     </fieldset>
   );
 }
 
 function RequestWizard({ onClose, onCreate }) {
+  const dialogRef = useRef(null);
+  useDialog(dialogRef, onClose);
   const [step, setStep] = useState(0);
+  const [showErrors, setShowErrors] = useState(false);
   const [form, setForm] = useState({
     name: '', email: '', type: REQUEST_TYPES[0], channel: 'Customer portal',
     received: localDateValue(), due: '', description: '', verification: 'Pending',
@@ -180,7 +207,10 @@ function RequestWizard({ onClose, onCreate }) {
   });
   const update = (key, value) => setForm(current => ({ ...current, [key]: value }));
   const steps = ['Request & identity', 'Scope & handling', 'Review'];
-  const dueDateHint = 'Use the target date from your organisation’s approved response policy. This is not a statutory deadline calculator.';
+  const dueDateHint = 'Use the target date from your organization’s approved response policy. This is not a statutory deadline calculator.';
+  const nameError = !form.name.trim() ? 'Enter the Data Principal’s name.' : '';
+  const emailError = !form.email.trim() ? 'Enter a contact email so you can respond.' : !isValidEmail(form.email) ? 'Enter a valid email address, like name@example.com.' : '';
+  const stepOneValid = !nameError && !emailError;
 
   function createRequest() {
     onCreate({
@@ -189,8 +219,8 @@ function RequestWizard({ onClose, onCreate }) {
       type: form.type,
       name: form.name.trim(),
       email: form.email.trim(),
-      received: displayDate(form.received),
-      due: form.due ? displayDate(form.due) : 'Set per policy',
+      received: form.received,
+      due: form.due,
       activeStep: form.verification === 'Verified' ? 'Triage request' : 'Verify identity and authority',
       status: form.verification === 'Verified' ? 'Received' : 'Identity verification',
       verification: form.verification,
@@ -200,32 +230,32 @@ function RequestWizard({ onClose, onCreate }) {
       dataTypes: form.dataTypes,
       representative: form.representative,
       outcome: 'Not decided',
-      notes: form.notes.trim() ? [{ date: displayDate(form.received), text: form.notes.trim() }] : [],
+      notes: form.notes.trim() ? [{ date: form.received, text: form.notes.trim() }] : [],
     });
   }
 
   return (
     <div className="rights-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="rights-wizard" role="dialog" aria-modal="true" aria-labelledby="rights-wizard-title">
+      <section ref={dialogRef} tabIndex={-1} className="rights-wizard" role="dialog" aria-modal="true" aria-labelledby="rights-wizard-title">
         <header className="rights-wizard-header">
           <div className="rights-wizard-heading"><span><Icons.Users size={19} /></span><div><small>DATA PRINCIPAL RIGHTS</small><h2 id="rights-wizard-title">Register a rights request</h2></div></div>
-          <button type="button" className="rights-icon-button" onClick={onClose} aria-label="Close request form"><Icons.X size={18} /></button>
+          <button type="button" className="icon-btn modal-close" onClick={onClose} aria-label="Close request form"><Icons.X size={18} /></button>
         </header>
-        <div className="rights-stepper">{steps.map((label, index) => <div key={label} className={`rights-step${step === index ? ' active' : ''}${index < step ? ' complete' : ''}`}><span>{index < step ? <Icons.Check size={13} /> : `0${index + 1}`}</span><b>{label}</b></div>)}</div>
+        <div className="rights-stepper" aria-label={`Step ${step + 1} of ${steps.length}: ${steps[step]}`}>{steps.map((label, index) => <div key={label} aria-current={step === index ? 'step' : undefined} className={`rights-step${step === index ? ' active' : ''}${index < step ? ' complete' : ''}`}><span>{index < step ? <Icons.Check size={13} /> : `0${index + 1}`}</span><b>{label}</b></div>)}</div>
         <div className="rights-wizard-body">
           {step === 0 && <div className="rights-form-section">
             <div className="rights-section-heading"><span><Icons.Clipboard size={17} /></span><div><h3>Request and Data Principal</h3><p>Record the request as received. Avoid collecting identity documents or extra personal data unless necessary.</p></div></div>
             <div className="rights-form-grid">
-              <Field label="Data Principal’s name"><input autoFocus required value={form.name} onChange={event => update('name', event.target.value)} placeholder="Name as provided by the requester" /></Field>
-              <Field label="Contact email"><input type="email" required value={form.email} onChange={event => update('email', event.target.value)} placeholder="name@example.com" /></Field>
-              <Field label="Right being exercised" className="span-2"><select value={form.type} onChange={event => update('type', event.target.value)}>{REQUEST_TYPES.map(type => <option key={type}>{type}</option>)}</select></Field>
+              <Field label="Data Principal’s name" required error={showErrors ? nameError : ''}><input data-autofocus className="input" aria-invalid={showErrors && !!nameError} required value={form.name} onChange={event => update('name', event.target.value)} placeholder="Name as provided by the requester" /></Field>
+              <Field label="Contact email" required error={showErrors ? emailError : ''}><input className="input" aria-invalid={showErrors && !!emailError} type="email" required value={form.email} onChange={event => update('email', event.target.value)} placeholder="name@example.com" /></Field>
+              <Field label="Right being exercised" className="span-2"><select className="select" value={form.type} onChange={event => update('type', event.target.value)}>{REQUEST_TYPES.map(type => <option key={type}>{type}</option>)}</select></Field>
               <div className="rights-guidance span-2"><Icons.Shield size={15} /><span>{RIGHT_GUIDANCE[form.type]}</span></div>
-              <Field label="Received through"><select value={form.channel} onChange={event => update('channel', event.target.value)}>{CHANNELS.map(channel => <option key={channel}>{channel}</option>)}</select></Field>
-              <Field label="Date received"><input type="date" value={form.received} onChange={event => update('received', event.target.value)} /></Field>
-              <Field label="Request summary" className="span-2"><textarea rows={3} value={form.description} onChange={event => update('description', event.target.value)} placeholder="Capture what the person is asking for, in their own terms where possible." /></Field>
+              <Field label="Received through"><select className="select" value={form.channel} onChange={event => update('channel', event.target.value)}>{CHANNELS.map(channel => <option key={channel}>{channel}</option>)}</select></Field>
+              <Field label="Date received"><input className="input" type="date" value={form.received} onChange={event => update('received', event.target.value)} /></Field>
+              <Field label="Request summary" className="span-2"><textarea className="textarea" rows={3} value={form.description} onChange={event => update('description', event.target.value)} placeholder="Capture what the person is asking for, in their own terms where possible." /></Field>
             </div>
             <div className="rights-representative">
-              <label><input type="checkbox" checked={form.representative} onChange={event => update('representative', event.target.checked)} /><span><b>Submitted by an authorised representative</b><small>Record the representative’s authority check separately. Do not retain more evidence than needed.</small></span></label>
+              <label><input type="checkbox" checked={form.representative} onChange={event => update('representative', event.target.checked)} /><span><b>Submitted by an authorized representative</b><small>Record the representative’s authority check separately. Do not retain more evidence than needed.</small></span></label>
             </div>
             <div className="rights-privacy-note"><Icons.Lock size={16} /><span>Keep contact details limited to what is needed to verify, communicate about, and fulfil this request.</span></div>
           </div>}
@@ -233,13 +263,13 @@ function RequestWizard({ onClose, onCreate }) {
             <div className="rights-section-heading"><span className="teal"><Icons.Shield size={17} /></span><div><h3>Verification, scope & handling</h3><p>Establish a proportionate verification path and identify where to look before sharing or changing data.</p></div></div>
             <div className="rights-verification-card">
               <div><b>Identity / authority verification</b><small>Use a proportionate method. Do not request additional information if identity is already clear.</small></div>
-              <select aria-label="Verification status" value={form.verification} onChange={event => update('verification', event.target.value)}><option>Pending</option><option>Verified</option><option>Unable to verify</option></select>
+              <select className="select" aria-label="Verification status" value={form.verification} onChange={event => update('verification', event.target.value)}><option>Pending</option><option>Verified</option><option>Unable to verify</option></select>
             </div>
             <MultiSelect label="Systems to search or action" hint="Select relevant systems only; confirm with system owners before responding." options={SYSTEMS} value={form.systems} onChange={value => update('systems', value)} />
             <MultiSelect label="Potential personal data categories" hint="For triage only. Confirm what is actually held before a response is issued." options={DATA_TYPES} value={form.dataTypes} onChange={value => update('dataTypes', value)} />
             <div className="rights-form-grid rights-handling-grid">
-              <Field label="Internal target response date" hint={dueDateHint}><input type="date" value={form.due} onChange={event => update('due', event.target.value)} /></Field>
-              <Field label="Initial handling note" hint="Internal note only. Do not include unnecessary personal data."><textarea rows={2} value={form.notes} onChange={event => update('notes', event.target.value)} placeholder="Verification method, routing, or next action" /></Field>
+              <Field label="Internal target response date" hint={dueDateHint}><input className="input" type="date" value={form.due} onChange={event => update('due', event.target.value)} /></Field>
+              <Field label="Initial handling note" hint="Internal note only. Do not include unnecessary personal data."><textarea className="textarea" rows={2} value={form.notes} onChange={event => update('notes', event.target.value)} placeholder="Verification method, routing, or next action" /></Field>
             </div>
             <div className="rights-info-callout"><Icons.Alert size={16} /><span>Check the applicable Act, rules, exemptions, retention obligations, and your approved policy before deciding how to fulfil or decline a request. A target date here is an internal tracker only.</span></div>
           </div>}
@@ -258,7 +288,17 @@ function RequestWizard({ onClose, onCreate }) {
             <div className="rights-info-callout"><Icons.Lock size={16} /><span>Never disclose another person’s data. Assess applicable exceptions and third-party information, and document the rationale for any partial response or refusal.</span></div>
           </div>}
         </div>
-        <footer className="rights-wizard-footer"><span>STEP {step + 1} <i>/</i> {steps.length}</span><div>{step > 0 && <button type="button" className="rights-button secondary" onClick={() => setStep(current => current - 1)}><Icons.ChevronLeft size={15} />Back</button>}{step < 2 ? <button type="button" className="rights-button primary" disabled={step === 0 && (!form.name.trim() || !form.email.trim())} onClick={() => setStep(current => current + 1)}>Continue<Icons.ChevronRight size={15} /></button> : <button type="button" className="rights-button primary" disabled={!form.name.trim() || !form.email.trim()} onClick={createRequest}><Icons.Check size={15} />Add to register</button>}</div></footer>
+        <footer className="rights-wizard-footer"><span>STEP {step + 1} <i>/</i> {steps.length}</span><div>
+          {step > 0
+            ? <Button icon={<Icons.ChevronLeft size={15} />} onClick={() => setStep(current => current - 1)}>Back</Button>
+            : <Button variant="ghost" onClick={onClose}>Cancel</Button>}
+          {step < 2
+            ? <Button variant="primary" onClick={() => {
+                if (step === 0 && !stepOneValid) { setShowErrors(true); dialogRef.current?.querySelector('[aria-invalid="true"], input')?.focus(); return; }
+                setStep(current => current + 1);
+              }}>Continue <Icons.ChevronRight size={15} /></Button>
+            : <Button variant="primary" icon={<Icons.Check size={15} />} disabled={!stepOneValid} onClick={createRequest}>Add to register</Button>}
+        </div></footer>
       </section>
     </div>
   );
@@ -270,36 +310,70 @@ function RequestDetails({ request, onClose, onUpdate }) {
   const [outcome, setOutcome] = useState(request.outcome ?? 'Not decided');
   const [note, setNote] = useState('');
 
+  const unchanged = nextStatus === request.status && verification === request.verification
+    && outcome === (request.outcome ?? 'Not decided') && !note.trim();
+  /* Explain why saving is blocked instead of silently disabling the button */
+  const blockReason = unchanged ? 'Change a field or add a case note to save an update.'
+    : (nextStatus === 'Declined' || outcome === 'Declined' || outcome === 'Partially fulfilled') && !note.trim()
+      ? 'Add a case note explaining the rationale for a decline or partial response.'
+      : nextStatus === 'Completed' && outcome === 'Not decided'
+        ? 'Choose a response outcome before marking the request completed.'
+        : '';
+
   function saveUpdate() {
     onUpdate(request.id, nextStatus, verification, outcome, note.trim());
     setNote('');
   }
 
   return (
-    <div className="rights-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="rights-detail-modal" role="dialog" aria-modal="true" aria-labelledby="rights-detail-title">
-        <header className="rights-detail-header"><div><small>{request.id} · RECEIVED {request.received}</small><h2 id="rights-detail-title">{request.title}</h2></div><button type="button" className="rights-icon-button" onClick={onClose} aria-label="Close request details"><Icons.X size={18} /></button></header>
-        <div className="rights-detail-badges"><StatusBadge status={request.status} /><VerificationBadge verification={request.verification} /><span className="rights-channel-badge">{request.channel}</span></div>
-        <p className="rights-detail-description">{request.description || 'No request summary provided.'}</p>
-        <div className="rights-detail-grid">
-          <div><small>Data Principal</small><b>{request.name}</b></div><div><small>Contact</small><b>{request.email}</b></div>
-          <div><small>Right requested</small><b>{request.type}</b></div><div><small>Internal target date</small><b>{request.due}</b></div>
-          <div><small>Submitted by representative</small><b>{request.representative ? 'Yes · authority should be verified' : 'No'}</b></div><div><small>Decision outcome</small><b>{request.outcome ?? 'Not decided'}</b></div>
-          <div className="span-2"><small>Systems</small><b>{request.systems.join(', ') || 'Not yet identified'}</b></div>
-          <div className="span-2"><small>Potential data categories</small><b>{request.dataTypes.join(', ') || 'Not yet identified'}</b></div>
+    <Modal
+      title={request.title}
+      subtitle={`${request.id} · Received ${displayDate(request.received)}`}
+      icon={<Icons.Users size={18} />}
+      onClose={onClose}
+      size="lg"
+      footer={<Button onClick={onClose}>Close</Button>}
+    >
+      <div className="detail-badges"><StatusBadge status={request.status} /><VerificationBadge verification={request.verification} /><Badge>{request.channel}</Badge></div>
+      <p className="detail-description">{request.description || 'No request summary provided.'}</p>
+      <dl className="detail-list">
+        {[
+          ['Data Principal', request.name],
+          ['Contact', <a key="e" className="text-link" href={`mailto:${request.email}`}>{request.email}</a>],
+          ['Right requested', request.type],
+          ['Internal target date', <TargetDate key="t" request={request} />],
+          ['Submitted by representative', request.representative ? 'Yes · authority should be verified' : 'No'],
+          ['Decision outcome', request.outcome ?? 'Not decided'],
+          ['Systems', request.systems.join(', ') || 'Not yet identified'],
+          ['Potential data categories', request.dataTypes.join(', ') || 'Not yet identified'],
+        ].map(([label, value]) => <div className="detail-row" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+      </dl>
+
+      <section className="case-update">
+        <h3>Update case</h3>
+        <p>Record verification, the decision outcome, next step, and an internal handling note.</p>
+        <div className="form-grid">
+          <Field label="Status"><select className="select" value={nextStatus} onChange={event => setNextStatus(event.target.value)}>{CASE_STATUSES.map(status => <option key={status}>{status}</option>)}</select></Field>
+          <Field label="Identity / authority verification"><select className="select" value={verification} onChange={event => setVerification(event.target.value)}><option>Pending</option><option>Verified</option><option>Unable to verify</option></select></Field>
+          <Field label="Response / decision outcome" className="span-2"><select className="select" value={outcome} onChange={event => setOutcome(event.target.value)}><option>Not decided</option><option>Fulfilled in full</option><option>Partially fulfilled</option><option>Declined</option><option>Withdrawn by requester</option></select></Field>
+          <Field label="Case note" className="span-2" hint="Record a clear rationale for a partial fulfilment or decline. Verify identity or representative authority before disclosing personal data."><textarea className="textarea" rows={3} value={note} onChange={event => setNote(event.target.value)} placeholder="Verification, searches, clarification, decision rationale, or response dispatch" /></Field>
         </div>
-        <section className="rights-case-update"><div><h3>Update case</h3><p>Record verification, the decision outcome, next step, and an internal handling note.</p></div>
-          <label>Status<select value={nextStatus} onChange={event => setNextStatus(event.target.value)}>{CASE_STATUSES.map(status => <option key={status}>{status}</option>)}</select></label>
-          <label>Identity / authority verification<select value={verification} onChange={event => setVerification(event.target.value)}><option>Pending</option><option>Verified</option><option>Unable to verify</option></select></label>
-          <label>Response / decision outcome<select value={outcome} onChange={event => setOutcome(event.target.value)}><option>Not decided</option><option>Fulfilled in full</option><option>Partially fulfilled</option><option>Declined</option><option>Withdrawn by requester</option></select></label>
-          <label>Case note<textarea rows={3} value={note} onChange={event => setNote(event.target.value)} placeholder="Record verification, searches, clarification, decision rationale, or response dispatch." /></label>
-          <p className="rights-decision-hint">Record a clear rationale and response details for a partial fulfilment or decline. Verify identity or representative authority before disclosing personal data.</p>
-          <button type="button" className="rights-button primary" disabled={(nextStatus === request.status && verification === request.verification && outcome === (request.outcome ?? 'Not decided') && !note.trim()) || ((nextStatus === 'Declined' || outcome === 'Declined' || outcome === 'Partially fulfilled') && !note.trim()) || (nextStatus === 'Completed' && outcome === 'Not decided')} onClick={saveUpdate}><Icons.Check size={15} />Save case update</button>
-        </section>
-        <section className="rights-timeline"><h3>Case history</h3>{request.notes.length ? request.notes.map((entry, index) => <div key={`${entry.date}-${index}`}><span /><small>{entry.date}</small><p>{entry.text}</p></div>) : <p className="rights-no-history">No internal case notes have been recorded yet.</p>}</section>
-        <div className="rights-detail-disclaimer"><Icons.Lock size={15} />Request data in this preview is kept in memory and is not sent to a server.</div>
+        <div className="case-update-actions">
+          {blockReason && <span className="field-hint" role="status">{blockReason}</span>}
+          <Button variant="primary" icon={<Icons.Check size={15} />} disabled={!!blockReason} onClick={saveUpdate}>Save case update</Button>
+        </div>
       </section>
-    </div>
+
+      <section className="case-history">
+        <h3>Case history</h3>
+        {request.notes.length ? (
+          <ol className="timeline">
+            {request.notes.map((entry, index) => <li key={`${entry.date}-${index}`}><small>{displayDate(entry.date)}</small><p>{entry.text}</p></li>)}
+          </ol>
+        ) : <p className="dt-muted">No internal case notes have been recorded yet.</p>}
+      </section>
+      <div className="info-note"><Icons.Lock size={15} />Request data in this preview is kept in memory and is not sent to a server.</div>
+    </Modal>
   );
 }
 
@@ -350,7 +424,7 @@ export default function DataRights({ onAction = () => {} }) {
         activeStep,
         verification,
         outcome,
-        notes: entryText ? [{ date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), text: entryText }, ...request.notes] : request.notes,
+        notes: entryText ? [{ date: new Date().toISOString().slice(0, 10), text: entryText }, ...request.notes] : request.notes,
       };
     }));
     onAction(`Request ${id} updated.`);
@@ -362,20 +436,22 @@ export default function DataRights({ onAction = () => {} }) {
     setTypeFilter('All request types');
   }
 
-  return (
-    <main className="rights-page">
-      <section className="rights-hero">
-        <div className="rights-hero-content">
-          <div className="rights-hero-kicker"><span /> DATA PRINCIPAL RIGHTS · DPDPA</div>
-          <h2>Every request.<br /><em>Handled with care.</em></h2>
-          <p>A thoughtful, traceable workflow for receiving, verifying, assessing, and responding to Data Principal rights requests.</p>
-          <button type="button" className="rights-hero-button" onClick={() => setWizardOpen(true)}><Icons.Plus size={16} />Register a request<Icons.ChevronRight size={15} /></button>
-        </div>
-        <div className="rights-hero-art" aria-hidden="true"><div className="rights-art-orbit orbit-one" /><div className="rights-art-orbit orbit-two" /><div className="rights-art-orbit orbit-three" /><div className="rights-art-card"><div className="rights-art-card-top"><span><Icons.Users size={19} /></span><i /></div><div className="rights-art-line long" /><div className="rights-art-line" /><div className="rights-art-check"><Icons.Check size={15} /></div></div><div className="rights-art-chip chip-one"><Icons.Shield size={14} /> Identity first</div><div className="rights-art-chip chip-two"><Icons.Clock size={14} /> Track every step</div></div>
-        <div className="rights-hero-footer"><span>PRIVACY RIGHTS WORKSPACE</span><span><i /> REQUESTS HANDLED WITH ACCOUNTABILITY</span></div>
-      </section>
+  const filtersActive = query || statusFilter !== 'All statuses' || typeFilter !== 'All request types';
 
-      <div className="rights-page-heading"><div><small>CASE MANAGEMENT</small><h2>Rights request register</h2><p>One place to track each request from receipt through response.</p></div><span><Icons.Refresh size={14} /> Updated just now</span></div>
+  return (
+    <div className="page rights-page">
+      <PageActions>
+        <Button variant="primary" icon={<Icons.Plus size={15} />} onClick={() => setWizardOpen(true)}>Register a request</Button>
+      </PageActions>
+
+      <section className="page-intro">
+        <span className="page-intro-icon"><Icons.Users size={20} /></span>
+        <div>
+          <span className="page-intro-eyebrow">Data Principal rights · DPDP Act</span>
+          <h2>Rights request register</h2>
+          <p>Receive, verify, assess, and respond to access, correction, erasure, grievance, nomination, and consent-withdrawal requests — with a clear record of every step.</p>
+        </div>
+      </section>
 
       <section className="rights-metrics" aria-label="Rights request overview">
         <MetricCard icon={Icons.Clipboard} label="Total requests" value={requests.length} detail="All cases" tone="blue" />
@@ -384,20 +460,64 @@ export default function DataRights({ onAction = () => {} }) {
         <MetricCard icon={Icons.X} label="Declined" value={declinedCount} detail="Rationale recorded" tone="rose" />
       </section>
 
-      <section className="rights-register">
-        <header className="rights-register-head"><div><div className="rights-register-title"><span><Icons.Users size={17} /></span><h2>Data Principal requests</h2><b>{requests.length}</b></div><p>Manage access, correction, erasure, grievances, nominations, and consent withdrawal.</p></div><button type="button" className="rights-button primary" onClick={() => setWizardOpen(true)}><Icons.Plus size={15} />New request</button></header>
-        <div className="rights-toolbar"><label className="rights-search"><Icons.Search size={16} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search by reference, name, email, or request type" /></label><select aria-label="Filter by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option>All statuses</option>{activeStatuses.map(status => <option key={status}>{status}</option>)}<option>Completed</option><option>Declined</option></select><select aria-label="Filter by request type" value={typeFilter} onChange={event => setTypeFilter(event.target.value)}><option>All request types</option>{REQUEST_TYPES.map(type => <option key={type}>{type}</option>)}</select>{(query || statusFilter !== 'All statuses' || typeFilter !== 'All request types') && <button type="button" className="rights-clear" onClick={resetFilters}>Clear filters</button>}</div>
-        <div className="rights-table-wrap"><table className="rights-table"><thead><tr><th>Request</th><th>Requested on</th><th>Right exercised</th><th>Active step</th><th>Verification</th><th>Status</th><th>Target date</th><th><span className="sr-only">Open case</span></th></tr></thead><tbody>
-          {filtered.map(request => <tr key={request.id} onClick={() => setSelectedId(request.id)}><td><div className="rights-request-cell"><span><Icons.File size={16} /></span><div><b>{request.title}</b><small>{request.name} <i /> {request.id}</small></div></div></td><td>{request.received}</td><td><span className="rights-type-chip">{request.type}</span></td><td><span className="rights-active-step">{request.activeStep}</span></td><td><VerificationBadge verification={request.verification} /></td><td><StatusBadge status={request.status} /></td><td className={request.due === 'Set per policy' ? 'rights-date-missing' : ''}>{request.due}</td><td><button type="button" className="rights-open-button" aria-label={`Open ${request.id}`} onClick={event => { event.stopPropagation(); setSelectedId(request.id); }}><Icons.ChevronRight size={16} /></button></td></tr>)}
-        </tbody></table>
-          {filtered.length === 0 && <div className="rights-empty"><span><Icons.Search size={20} /></span><b>No requests match your search</b><p>Try a different search or clear the selected filters.</p><button type="button" className="rights-clear" onClick={resetFilters}>Clear filters</button></div>}
+      <section className="table-card">
+        <div className="table-toolbar">
+          <SearchInput value={query} onChange={setQuery} label="Search requests" placeholder="Search by reference, name, email, or request type" />
+          <select className="select" aria-label="Filter by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option>All statuses</option>{activeStatuses.map(status => <option key={status}>{status}</option>)}<option>Completed</option><option>Declined</option></select>
+          <select className="select" aria-label="Filter by request type" value={typeFilter} onChange={event => setTypeFilter(event.target.value)}><option>All request types</option>{REQUEST_TYPES.map(type => <option key={type}>{type}</option>)}</select>
+          {filtersActive && <Button size="sm" variant="ghost" onClick={resetFilters}>Clear filters</Button>}
         </div>
-        <footer className="rights-table-footer"><span>Showing <b>{filtered.length ? 1 : 0}–{filtered.length}</b> of <b>{filtered.length}</b> requests</span><span>Target dates follow internal policy; confirm applicable statutory requirements separately.</span></footer>
+        {filtered.length === 0 ? (
+          <EmptyState
+            compact
+            icon={<Icons.Search size={20} />}
+            title={requests.length ? 'No requests match your search' : 'No requests yet'}
+            description={requests.length ? 'Try a different search or clear the selected filters.' : 'Register a request to start the log.'}
+            action={requests.length ? <Button size="sm" onClick={resetFilters}>Clear filters</Button> : <Button size="sm" variant="primary" onClick={() => setWizardOpen(true)}>Register a request</Button>}
+          />
+        ) : (
+          <table className="data-table">
+            <thead><tr>
+              <th scope="col">Request</th>
+              <th scope="col" className="dt-col-secondary">Received</th>
+              <th scope="col" className="dt-col-secondary">Active step</th>
+              <th scope="col">Verification</th>
+              <th scope="col">Status</th>
+              <th scope="col">Target date</th>
+              <th scope="col"><span className="sr-only">Open case</span></th>
+            </tr></thead>
+            <tbody>
+              {filtered.map(request => (
+                <tr key={request.id} className="is-clickable" tabIndex={0} onClick={() => setSelectedId(request.id)} onKeyDown={event => { if (event.key === 'Enter') setSelectedId(request.id); }}>
+                  <td className="dt-primary">
+                    <div className="dt-title">{request.title}</div>
+                    <div className="dt-sub"><span>{request.type}</span><span>{request.name}</span><span className="dt-mono">{request.id}</span></div>
+                    <div className="dt-sub dt-fold"><span>Received {displayDate(request.received)}</span><span>{request.activeStep}</span></div>
+                  </td>
+                  <td className="dt-col-secondary dt-nowrap" data-label="Received">{displayDate(request.received)}</td>
+                  <td className="dt-col-secondary" data-label="Active step">{request.activeStep}</td>
+                  <td data-label="Verification"><VerificationBadge verification={request.verification} /></td>
+                  <td data-label="Status"><StatusBadge status={request.status} /></td>
+                  <td data-label="Target date"><TargetDate request={request} /></td>
+                  <td className="dt-actions">
+                    <Button size="sm" variant="ghost" aria-label={`Open ${request.id}`} onClick={event => { event.stopPropagation(); setSelectedId(request.id); }}>
+                      Open <Icons.ChevronRight size={14} />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <footer className="table-footer">
+          <span>Showing <b>{filtered.length}</b> of <b>{requests.length}</b> requests</span>
+          <span>Target dates follow internal policy; confirm applicable statutory requirements separately.</span>
+        </footer>
       </section>
 
-      <div className="rights-privacy-footer"><Icons.Lock size={15} /><span>Static preview · Case data is held in memory only and is not sent to a server.</span><span>Purpose limitation · Data minimisation · Accountability</span></div>
+      <div className="info-note"><Icons.Lock size={15} /><span>Preview — case data is held in memory only and isn't sent to a server.</span></div>
       {wizardOpen && <RequestWizard onClose={() => setWizardOpen(false)} onCreate={createRequest} />}
       {selectedRequest && <RequestDetails request={selectedRequest} onClose={() => setSelectedId(null)} onUpdate={updateRequest} />}
-    </main>
+    </div>
   );
 }

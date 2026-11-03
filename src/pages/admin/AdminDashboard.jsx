@@ -4,6 +4,8 @@
    All data is static placeholder — swap with API later.
 ─────────────────────────────────────────────────────── */
 
+import { Badge } from '../../ui';
+
 /* ── Static data ──────────────────────────────────── */
 const STATS = [
   { label: 'Total Clients',    value: 8,    sub: '+2 this month',   color: '#1B3680', bg: '#EEF2FF' },
@@ -73,7 +75,7 @@ function Avatar({ initials, size = 32, bg = 'var(--green-soft)', color = 'var(--
     <div style={{
       width: size, height: size, borderRadius: radius, flexShrink: 0,
       background: bg, color, display: 'flex', alignItems: 'center',
-      justifyContent: 'center', fontSize: size * 0.34, fontWeight: 700,
+      justifyContent: 'center', fontSize: Math.max(12, Math.round(size * 0.34)), fontWeight: 700,
     }}>
       {initials}
     </div>
@@ -132,30 +134,15 @@ function ProgressBar({ value, risk }) {
 }
 
 /* ── Status Badge ────────────────────────────────── */
+const STATUS_TONES = { compliant: 'success', 'near-complete': 'violet', 'in-progress': 'info', 'at-risk': 'warning', 'not-started': 'danger' };
 function StatusBadge({ status }) {
-  const s = STATUS_MAP[status] ?? { label: status, bg: 'var(--bg)', color: 'var(--slate)', border: 'var(--border)' };
-  return (
-    <span style={{
-      fontSize: 12, fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-pill)',
-      background: s.bg, color: s.color, border: `1px solid ${s.border}`,
-      whiteSpace: 'nowrap',
-    }}>
-      {s.label}
-    </span>
-  );
+  return <Badge tone={STATUS_TONES[status] ?? 'neutral'}>{STATUS_MAP[status]?.label ?? status}</Badge>;
 }
 
 /* ── Risk Badge ──────────────────────────────────── */
+const RISK_TONES = { low: 'success', medium: 'warning', high: 'danger' };
 function RiskBadge({ risk }) {
-  const r = RISK_MAP[risk] ?? { label: risk, color: 'var(--slate)', bg: 'var(--bg)' };
-  return (
-    <span style={{
-      fontSize: 12, fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-pill)',
-      background: r.bg, color: r.color, border: `1px solid ${r.color}22`,
-    }}>
-      {r.label}
-    </span>
-  );
+  return <Badge tone={RISK_TONES[risk] ?? 'neutral'} dot>{RISK_MAP[risk]?.label ?? risk}</Badge>;
 }
 
 /* ── Section header ──────────────────────────────── */
@@ -176,25 +163,21 @@ function SectionHead({ title, count }) {
 /* ── Main component ──────────────────────────────── */
 export default function AdminDashboard() {
   return (
-    <div className="page" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+    <div className="page page-stack">
 
       {/* ── Stat tiles ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 16,
-      }}>
+      <div className="tile-grid">
         {STATS.map(s => (
           <StatTile key={s.label} {...s} />
         ))}
       </div>
 
       {/* ── Mid row: Reviewer assignments + Activity feed ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+      <div className="split-grid">
 
         {/* Reviewer assignments card */}
         <div className="card" style={{ padding: '20px 24px' }}>
-          <SectionHead title="Reviewer Assignments" count={REVIEWERS.length} />
+          <SectionHead title="Reviewer assignments" count={REVIEWERS.length} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {REVIEWERS.map((r, i) => (
               <div key={r.id} style={{
@@ -240,7 +223,7 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Compliance status breakdown */}
           <div className="card" style={{ padding: '20px 24px', flex: 1 }}>
-            <SectionHead title="Status Breakdown" />
+            <SectionHead title="Status breakdown" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {Object.entries(STATUS_MAP).map(([key, cfg]) => {
                 const count = TENANTS.filter(t => t.status === key).length;
@@ -267,7 +250,7 @@ export default function AdminDashboard() {
 
           {/* Risk summary */}
           <div className="card" style={{ padding: '20px 24px' }}>
-            <SectionHead title="Risk Distribution" />
+            <SectionHead title="Risk distribution" />
             <div style={{ display: 'flex', gap: 10 }}>
               {Object.entries(RISK_MAP).map(([key, cfg]) => {
                 const count = TENANTS.filter(t => t.risk === key).length;
@@ -287,52 +270,44 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Tenant compliance table ── */}
-      <div className="card" style={{ padding: '20px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <SectionHead title="Tenant Compliance Progress" count={TENANTS.length} />
-          <span style={{ fontSize: 12, color: 'var(--slate)' }}>Static preview — connect API to load live data</span>
+      <div className="table-card">
+        <div className="table-card-head">
+          <SectionHead title="Tenant compliance progress" count={TENANTS.length} />
+          <span className="dt-muted" style={{ fontSize: 13 }}>Sample data — live figures appear once reporting is connected</span>
         </div>
-        <table className="tbl">
+        <table className="data-table">
           <thead>
             <tr>
-              <th>Tenant / Client</th>
-              <th>Assigned Reviewer</th>
-              <th style={{ minWidth: 180 }}>Compliance Progress</th>
-              <th>Status</th>
-              <th>Risk</th>
-              <th>Last Updated</th>
+              <th scope="col">Tenant</th>
+              <th scope="col" className="dt-col-secondary">Assigned reviewer</th>
+              <th scope="col" style={{ minWidth: 180 }}>Compliance progress</th>
+              <th scope="col">Status</th>
+              <th scope="col">Risk</th>
+              <th scope="col" className="dt-col-secondary">Last updated</th>
             </tr>
           </thead>
           <tbody>
             {TENANTS.map(t => (
               <tr key={t.id}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Avatar
-                      initials={t.name.slice(0, 2).toUpperCase()}
-                      size={32}
-                      radius={8}
-                    />
-                    <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{t.name}</span>
+                <td className="dt-primary">
+                  <div className="dt-primary-inner">
+                    <Avatar initials={t.name.slice(0, 2).toUpperCase()} size={34} radius={10} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="dt-title">{t.name}</div>
+                      <div className="dt-sub dt-fold">
+                        <span>Reviewer: {t.reviewer}</span>
+                        <span>Updated {t.lastUpdated.toLowerCase()}</span>
+                      </div>
+                    </div>
                   </div>
                 </td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Avatar
-                      initials={t.reviewer.split(' ').map(n => n[0]).join('')}
-                      size={24}
-                      bg="#EFF6FF"
-                      color="#1D4ED8"
-                    />
-                    <span style={{ fontSize: 13, color: 'var(--slate)' }}>{t.reviewer}</span>
-                  </div>
+                <td className="dt-col-secondary" data-label="Reviewer">{t.reviewer}</td>
+                <td data-label="Progress" style={{ minWidth: 160 }}>
+                  <div style={{ flex: 1, minWidth: 120 }}><ProgressBar value={t.progress} risk={t.risk} /></div>
                 </td>
-                <td>
-                  <ProgressBar value={t.progress} risk={t.risk} />
-                </td>
-                <td><StatusBadge status={t.status} /></td>
-                <td><RiskBadge risk={t.risk} /></td>
-                <td style={{ fontSize: 12, color: 'var(--muted)' }}>{t.lastUpdated}</td>
+                <td data-label="Status"><StatusBadge status={t.status} /></td>
+                <td data-label="Risk"><RiskBadge risk={t.risk} /></td>
+                <td className="dt-col-secondary dt-muted dt-nowrap" data-label="Last updated">{t.lastUpdated}</td>
               </tr>
             ))}
           </tbody>

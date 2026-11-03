@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Badge, Button, Icons, Modal } from '../ui';
+import {
+  Badge, Button, ConfirmDialog, EmptyState, ErrorState, Field, FilterChips, Icons, LoadingState, Modal, RowActions, SearchInput,
+} from '../ui';
+import { useToast } from '../context/ToastContext';
+import { formatDate } from '../lib/format';
 import {
   createPolicy,
   deletePolicy,
@@ -58,9 +62,10 @@ function countsFromPolicies(policies) {
 
 function displayDate(value) {
   if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? String(value).slice(0, 10) : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return formatDate(String(value).length > 10 ? value : String(value).slice(0, 10), String(value).slice(0, 10));
 }
+
+const STATUS_TONE = { published: 'success', 'in review': 'info', draft: 'warning', 'not started': 'neutral' };
 
 function fileName(policy) {
   const file = policy.files?.[0];
@@ -78,6 +83,8 @@ function dateTimeValue(value) {
 
 export default function Policies({ onAction }) {
   const { user } = useApp();
+  const toast = useToast();
+  const notifyError = (message) => toast.error(message);
   const [policies, setPolicies] = useState([]);
   const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -228,7 +235,7 @@ export default function Policies({ onAction }) {
       onAction?.(`Uploaded ${file.name}.`);
       await loadPolicies({ quiet: true });
     } catch (requestError) {
-      onAction?.(requestError.message || 'Could not upload the policy document.');
+      notifyError(requestError.message || 'Could not upload the policy document.');
     } finally {
       setBusyPolicyId(null);
     }
@@ -249,7 +256,7 @@ export default function Policies({ onAction }) {
       onAction?.('Policy status updated.');
       await loadPolicies({ quiet: true });
     } catch (requestError) {
-      onAction?.(requestError.message || 'Could not update policy status.');
+      notifyError(requestError.message || 'Could not update policy status.');
     } finally { setBusyPolicyId(null); }
   };
 
@@ -261,7 +268,7 @@ export default function Policies({ onAction }) {
       onAction?.('Policy deleted.');
       setDeleteTarget(null);
       await loadPolicies({ quiet: true });
-    } catch (requestError) { onAction?.(requestError.message || 'Could not delete policy.'); }
+    } catch (requestError) { notifyError(requestError.message || 'Could not delete policy.'); }
     finally { setBusyPolicyId(null); }
   };
 
@@ -273,14 +280,14 @@ export default function Policies({ onAction }) {
       onAction?.('Policy file removed.');
       setDeleteFilesTarget(null);
       await loadPolicies({ quiet: true });
-    } catch (requestError) { onAction?.(requestError.message || 'Could not remove policy files.'); }
+    } catch (requestError) { notifyError(requestError.message || 'Could not remove policy files.'); }
     finally { setBusyPolicyId(null); }
   };
 
   const handleDownload = async policy => {
     setBusyPolicyId(policy.id);
     try { await downloadPolicyFiles(policy.id); }
-    catch (requestError) { onAction?.(requestError.message || 'Could not download the policy file.'); }
+    catch (requestError) { notifyError(requestError.message || 'Could not download the policy file.'); }
     finally { setBusyPolicyId(null); }
   };
 
@@ -289,7 +296,7 @@ export default function Policies({ onAction }) {
       <div className="policy-page-copy">
         <span className="policy-kicker"><Icons.File size={14}/> DPDP GOVERNANCE</span>
         <h2>Policy library</h2>
-        <p>Import, track, and maintain the policies that support your DPDP compliance programme.</p>
+        <p>Import, track, and maintain the policies that support your DPDP compliance program.</p>
       </div>
       <div className="policy-toolbar-actions">
         <Button icon={<Icons.Upload size={15}/>} onClick={openImport}>Import policy</Button>
@@ -304,49 +311,101 @@ export default function Policies({ onAction }) {
       <article className="policy-metric"><span className="policy-metric-icon policy-metric-red"><Icons.Alert size={17}/></span><div><span>Needs attention</span><strong className="policy-num-red">{summary.needsAttention}</strong><small>Not started or due for review</small></div></article>
     </div>
 
-    <section className="card policy-library">
-      <header className="policy-library-head">
-        <div><h2>Policies</h2><p>Search and filter your organisation’s policy records.</p></div>
-        <span className="policy-count">{summary.total} {summary.total === 1 ? 'policy' : 'policies'}</span>
+    <section className="table-card policy-library">
+      <header className="table-card-head">
+        <div><h2 className="table-card-title">Policies</h2><p className="table-card-sub">Search and filter your organization’s policy records.</p></div>
+        <Badge>{summary.total} {summary.total === 1 ? 'policy' : 'policies'}</Badge>
       </header>
-      <div className="policy-controls">
-        <label className="policy-search"><Icons.Search size={16}/><input aria-label="Search policies" type="search" placeholder="Search by policy name, owner, or category" value={search} onChange={event => setSearch(event.target.value)} /></label>
-        <div className="policy-filter-list" role="group" aria-label="Filter policies">
-          {POLICY_TABS.map(item => <button key={item.id} className={`policy-filter${tab === item.id ? ' active' : ''}`} aria-pressed={tab === item.id} onClick={() => setTab(item.id)}>{item.label}</button>)}
-        </div>
-        <select className="input policy-status-select" aria-label="Filter by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+      <div className="table-toolbar">
+        <SearchInput value={search} onChange={setSearch} label="Search policies" placeholder="Search by policy name, owner, or category" />
+        <FilterChips label="Filter policies" value={tab} onChange={setTab} items={POLICY_TABS.map(item => ({ key: item.id, label: item.label }))} />
+        <select className="select" aria-label="Filter by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
           <option value="">All statuses</option>
           {POLICY_STATUSES.map(status => <option key={status} value={status}>{status}</option>)}
         </select>
       </div>
 
-      {error && <div className="policy-alert" role="alert"><Icons.Alert size={16}/><span>{error}</span><button className="policy-retry" onClick={() => loadPolicies()}>Retry</button></div>}
-      {loading ? <div className="policy-loading"><span className="policy-spinner"/>Loading policy library…</div> : (
-        <div className="policy-table-scroll">
-          <table className="policy-table">
-            <thead><tr><th>Policy</th><th>Requirement</th><th>Status</th><th>Owner</th><th>Next review</th><th>Document</th><th>Actions</th></tr></thead>
-            <tbody>
-              {policies.map(policy => <tr key={policy.id}>
-                <td><div className="policy-name-cell"><span className="policy-row-icon"><Icons.File size={16}/></span><div><strong>{policy.name}</strong><span>{policy.category}{policy.section ? ` · ${policy.section}` : ''}</span></div></div></td>
-                <td><Badge tone={policy.requirement.toLowerCase() === 'mandatory' ? 'info' : 'neutral'}>{policy.requirement}</Badge></td>
-                <td><select className={`policy-status-control status-${policy.status.toLowerCase().replace(/[^a-z]+/g, '-')}`} aria-label={`Status for ${policy.name}`} disabled={busyPolicyId === policy.id} value={policy.status} onChange={event => changeStatus(policy, event.target.value)}>{POLICY_STATUSES.map(status => <option key={status}>{status}</option>)}</select></td>
-                <td>{policy.owner || '—'}</td>
-                <td>{displayDate(policy.nextReview)}</td>
-                <td>{fileName(policy) ? <span className="policy-file-name" title={fileName(policy)}><Icons.Check size={13}/>{fileName(policy)}</span> : <span className="policy-no-file">No file uploaded</span>}</td>
-                <td><div className="policy-actions">
-                  <button className="policy-action" onClick={() => openDetails(policy)} aria-label={`View ${policy.name}`} title="View details"><Icons.Eye size={15}/></button>
-                  <button className="policy-action" disabled={busyPolicyId === policy.id} onClick={() => uploadRefs.current[policy.id]?.click()} aria-label={`Upload file for ${policy.name}`} title="Upload or replace file"><Icons.Upload size={15}/></button>
-                  <input ref={element => { uploadRefs.current[policy.id] = element; }} type="file" accept=".pdf,.doc,.docx,.odt" hidden onChange={event => { uploadForPolicy(policy, event.target.files?.[0]); event.target.value = ''; }}/>
-                  <button className="policy-action" disabled={busyPolicyId === policy.id || !fileName(policy)} onClick={() => handleDownload(policy)} aria-label={`Download ${policy.name} file`} title="Download file"><Icons.Download size={15}/></button>
-                  <button className="policy-action policy-action-delete" onClick={() => fileName(policy) ? setDeleteFilesTarget(policy) : setDeleteTarget(policy)} aria-label={`Delete ${policy.name}`} title={fileName(policy) ? 'Remove file' : 'Delete policy'}><Icons.Trash size={15}/></button>
-                </div></td>
-              </tr>)}
-              {!policies.length && !error && <tr><td colSpan="7" className="policy-empty"><span className="policy-empty-icon"><Icons.Search size={20}/></span><strong>No policies match these filters</strong><span>Try another search, add a new policy, or import a document for an existing policy.</span><button onClick={() => { setSearch(''); setTab('all'); setStatusFilter(''); }}>Clear search and filters</button></td></tr>}
-            </tbody>
-          </table>
-        </div>
+      {error && <div style={{ padding: '16px 20px 0' }}><ErrorState title="Couldn't load the policy library" message={error} onRetry={() => loadPolicies()} /></div>}
+      {loading ? <LoadingState label="Loading policy library…" /> : !policies.length ? (!error && (
+        <EmptyState
+          compact
+          icon={<Icons.Search size={20} />}
+          title="No policies match these filters"
+          description="Try another search, add a new policy, or import a document for an existing policy."
+          action={<Button size="sm" onClick={() => { setSearch(''); setTab('all'); setStatusFilter(''); }}>Clear search and filters</Button>}
+        />
+      )) : (
+        <table className="data-table policy-table">
+          <thead><tr>
+            <th scope="col">Policy</th>
+            <th scope="col">Requirement</th>
+            <th scope="col">Status</th>
+            <th scope="col" className="dt-col-secondary">Owner</th>
+            <th scope="col">Next review</th>
+            <th scope="col" className="dt-col-secondary">Document</th>
+            <th scope="col"><span className="sr-only">Actions</span></th>
+          </tr></thead>
+          <tbody>
+            {policies.map(policy => {
+              const file = fileName(policy);
+              const busy = busyPolicyId === policy.id;
+              return <tr key={policy.id}>
+                <td className="dt-primary">
+                  <div className="dt-primary-inner">
+                    <span className="policy-row-icon" aria-hidden="true"><Icons.File size={16}/></span>
+                    <div style={{ minWidth: 0 }}>
+                      <button type="button" className="dt-title dt-title-link" onClick={() => openDetails(policy)}>{policy.name}</button>
+                      <div className="dt-sub">{policy.category && <span>{policy.category}</span>}{policy.section && <span>{policy.section}</span>}</div>
+                      <div className="dt-sub dt-fold">
+                        <span>Owner: {policy.owner || 'Not assigned'}</span>
+                        <span>{file ? `File: ${file}` : 'No file uploaded'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td data-label="Requirement"><Badge tone={policy.requirement.toLowerCase() === 'mandatory' ? 'info' : 'neutral'}>{policy.requirement}</Badge></td>
+                <td data-label="Status">
+                  <select
+                    className={`select input-sm policy-status-select status-${policy.status.toLowerCase().replace(/[^a-z]+/g, '-')}`}
+                    aria-label={`Status for ${policy.name}`}
+                    disabled={busy}
+                    value={policy.status}
+                    onChange={event => changeStatus(policy, event.target.value)}
+                  >
+                    {POLICY_STATUSES.map(status => <option key={status}>{status}</option>)}
+                  </select>
+                </td>
+                <td className="dt-col-secondary" data-label="Owner">{policy.owner || <span className="dt-muted">Not assigned</span>}</td>
+                <td className="dt-nowrap" data-label="Next review">{displayDate(policy.nextReview)}</td>
+                <td className="dt-col-secondary" data-label="Document">
+                  {file
+                    ? <span className="policy-file-name" title={file}><Icons.Check size={13}/><span className="dt-truncate" style={{ maxWidth: 180 }}>{file}</span></span>
+                    : <span className="dt-muted">No file uploaded</span>}
+                </td>
+                <td className="dt-actions">
+                  <span className="dt-actions-inner">
+                    <Button size="sm" variant="ghost" icon={<Icons.Upload size={14}/>} disabled={busy} loading={busy}
+                      onClick={() => uploadRefs.current[policy.id]?.click()} aria-label={`${file ? 'Replace' : 'Upload'} document for ${policy.name}`}>
+                      <span className="policy-upload-label">{file ? 'Replace' : 'Upload'}</span>
+                    </Button>
+                    <input ref={element => { uploadRefs.current[policy.id] = element; }} type="file" accept=".pdf,.doc,.docx,.odt" hidden onChange={event => { uploadForPolicy(policy, event.target.files?.[0]); event.target.value = ''; }}/>
+                    <RowActions
+                      label={`More actions for ${policy.name}`}
+                      items={[
+                        { label: 'View details', icon: <Icons.Eye size={15}/>, onClick: () => openDetails(policy) },
+                        { label: 'Download document', icon: <Icons.Download size={15}/>, onClick: () => handleDownload(policy), disabled: !file || busy },
+                        { label: 'Remove document', icon: <Icons.X size={15}/>, onClick: () => setDeleteFilesTarget(policy), hidden: !file },
+                        { label: 'Delete policy', icon: <Icons.Trash size={15}/>, onClick: () => setDeleteTarget(policy), danger: true },
+                      ]}
+                    />
+                  </span>
+                </td>
+              </tr>;
+            })}
+          </tbody>
+        </table>
       )}
-      <footer className="policy-library-foot"><span>{policies.length} policies shown</span><span><i className="policy-foot-dot"/> Synced with your policy service</span></footer>
+      <footer className="table-footer"><span>{policies.length} {policies.length === 1 ? 'policy' : 'policies'} shown</span><span><i className="policy-foot-dot"/> Synced with your policy service</span></footer>
     </section>
 
     {addOpen && <Modal title="Add a policy" onClose={closeAdd} width={620} footer={<><Button onClick={closeAdd} disabled={saving}>Cancel</Button><Button variant="primary" type="submit" form="policy-create-form" disabled={saving}>{saving ? 'Saving…' : 'Add policy'}</Button></>}>
@@ -397,7 +456,25 @@ export default function Policies({ onAction }) {
       </div>}
     </Modal>}
 
-    {deleteTarget && <Modal title="Delete policy?" onClose={() => setDeleteTarget(null)} footer={<><Button onClick={() => setDeleteTarget(null)}>Cancel</Button><Button variant="danger" onClick={handleDelete} disabled={busyPolicyId === deleteTarget.id}>Delete policy</Button></>}><p>Delete <strong>{deleteTarget.name}</strong> from the policy library? This action cannot be undone.</p></Modal>}
-    {deleteFilesTarget && <Modal title="Remove policy file?" onClose={() => setDeleteFilesTarget(null)} footer={<><Button onClick={() => setDeleteFilesTarget(null)}>Cancel</Button><Button variant="danger" onClick={handleDeleteFiles} disabled={busyPolicyId === deleteFilesTarget.id}>Remove file</Button></>}><p>Remove the uploaded document for <strong>{deleteFilesTarget.name}</strong>? The policy record will remain in the library.</p></Modal>}
+    {deleteTarget && (
+      <ConfirmDialog
+        title="Delete this policy?"
+        message={<>Delete <strong>{deleteTarget.name}</strong> from the policy library? Any attached document is removed too. This can’t be undone.</>}
+        confirmLabel="Delete policy"
+        busy={busyPolicyId === deleteTarget.id}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    )}
+    {deleteFilesTarget && (
+      <ConfirmDialog
+        title="Remove the document?"
+        message={<>Remove the uploaded document for <strong>{deleteFilesTarget.name}</strong>? The policy record stays in the library.</>}
+        confirmLabel="Remove document"
+        busy={busyPolicyId === deleteFilesTarget.id}
+        onConfirm={handleDeleteFiles}
+        onCancel={() => setDeleteFilesTarget(null)}
+      />
+    )}
   </div>;
 }
