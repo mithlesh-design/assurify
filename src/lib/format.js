@@ -101,3 +101,24 @@ export function downloadCsv(filename, rows, columns) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/** "2:46 PM" */
+export function formatTime(value, fallback = '') {
+  const d = toDate(value);
+  return d ? d.toLocaleTimeString(LOCALE, { hour: 'numeric', minute: '2-digit' }) : fallback;
+}
+
+/** Day key used to group activity feeds ("2026-10-24") */
+export function dayKey(value) {
+  const d = toDate(value);
+  if (!d) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** "Today", "Yesterday", or "Oct 24, 2026" */
+export function dayLabel(value) {
+  const days = daysUntil(value);
+  if (days === 0) return 'Today';
+  if (days === -1) return 'Yesterday';
+  return formatDate(value, '');
+}

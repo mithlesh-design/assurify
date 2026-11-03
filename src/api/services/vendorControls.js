@@ -18,6 +18,13 @@ import { ENDPOINTS }  from '../endpoints';
    entities — Vendor_Control distinguishes a vendor sub-control comment. */
 const EVENT_TYPE = 'Vendor_Control';
 
+/* Mock mode (VITE_ENABLE_MOCK_AUTH) — comments and documents kept in memory per sub-control. */
+const demo = import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true' ? { comments: {}, docs: {} } : null;
+const demoAuthor = () => {
+  try { const u = JSON.parse(localStorage.getItem('az_user')); return { name: u?.name ?? 'You', role: u?.role ?? 'reviewer' }; }
+  catch { return { name: 'You', role: 'reviewer' }; }
+};
+
 function requireEndpoint(path) {
   if (!path) {
     throw new Error('This feature is not available yet — the API endpoint has not been configured.');
@@ -27,6 +34,7 @@ function requireEndpoint(path) {
 
 /* GET /v1/tenant-service/comments/vendor-control/{control_id} → [comment, ...] */
 export async function getVendorControlComments(vendorControlId) {
+  if (demo) return [...(demo.comments[vendorControlId] ?? [])];
   const base = ENDPOINTS.VENDOR_CONTROL.COMMENTS_LIST(vendorControlId);
   const { data } = await api.get(`${base}/${vendorControlId}`, {
     // params: { event_type: EVENT_TYPE },
@@ -36,6 +44,12 @@ export async function getVendorControlComments(vendorControlId) {
 
 /* POST /v1/tenant-service/comments/vendor-control/{control_id}  { comment, control_id } */
 export async function createVendorControlComment(vendorControlId, comment) {
+  if (demo) {
+    const author = demoAuthor();
+    const entry = { type: 'comment', data: { id: `demo-vc${Date.now()}`, comment, commenter: author.name, role: author.role, created_at: new Date().toISOString() } };
+    demo.comments[vendorControlId] = [...(demo.comments[vendorControlId] ?? []), entry];
+    return entry;
+  }
   const base = ENDPOINTS.VENDOR_CONTROL.COMMENT_CREATE(vendorControlId);
   const { data } = await api.post(
     `${base}/${vendorControlId}`,
@@ -47,6 +61,7 @@ export async function createVendorControlComment(vendorControlId, comment) {
 
 /* GET /v1/file-manager/vendor-control/{control_id} → [file, ...] */
 export async function listVendorControlDocuments(vendorControlId) {
+  if (demo) return [...(demo.docs[vendorControlId] ?? [])];
   const base = ENDPOINTS.VENDOR_CONTROL.DOCS_LIST(vendorControlId);
   const { data } = await tenantApi.get(`${base}/${vendorControlId}`);
   return data;
