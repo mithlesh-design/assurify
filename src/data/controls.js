@@ -26,8 +26,13 @@ export const STATUS_META = [
   { value: 'not_applicable',    label: 'Not Applicable'    },
 ];
 
+/* Statuses that can arrive from the API but are not offered in the status picker */
+const EXTRA_STATUS_LABELS = { blocked: 'Blocked' };
+
 export function statusLabel(s) {
-  return STATUS_META.find(x => x.value === s)?.label ?? s;
+  return STATUS_META.find(x => x.value === s)?.label
+    ?? EXTRA_STATUS_LABELS[s]
+    ?? (typeof s === 'string' ? s.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : s);
 }
 
 export function statusClass(s) {

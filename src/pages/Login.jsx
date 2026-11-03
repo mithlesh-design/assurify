@@ -9,7 +9,8 @@
  *   message   string | null               — shown at top of sign-in form (session-expired notice)
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
+import { Icons, useDialog } from '../ui';
 import { useApp }       from '../context/AppContext';
 import { useToast }     from '../context/ToastContext';
 import { registerUser } from '../api/services/auth';
@@ -35,38 +36,41 @@ function IconEye({ open }) {
   );
 }
 
-function PasswordField({ value, onChange, placeholder, autoComplete, disabled, onKeyDown }) {
+function PasswordField({ id, value, onChange, placeholder, autoComplete, disabled, invalid, describedBy }) {
   const [show, setShow] = useState(false);
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="password-field">
       <input
+        id={id}
         type={show ? 'text' : 'password'}
         className="input"
         value={value}
         onChange={onChange}
-        required
         autoComplete={autoComplete}
         placeholder={placeholder}
         disabled={disabled}
-        onKeyDown={onKeyDown}
-        style={{ paddingRight: 42 }}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
       />
       <button
         type="button"
+        className="password-toggle"
         onClick={() => setShow(v => !v)}
-        tabIndex={-1}
-        style={{
-          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: 'var(--slate)', padding: 0, display: 'flex', alignItems: 'center',
-        }}
         aria-label={show ? 'Hide password' : 'Show password'}
+        aria-pressed={show}
       >
         <IconEye open={show} />
       </button>
     </div>
   );
 }
+
+function FieldError({ id, children }) {
+  if (!children) return null;
+  return <div className="field-error" id={id} role="alert"><Icons.Alert size={13} />{children}</div>;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /* ── Sign-in form ─────────────────────────────────────── */
 function SignInForm({ message }) {
@@ -75,60 +79,59 @@ function SignInForm({ message }) {
   const [email, setEmail] = useState('');
   const [pw,    setPw]    = useState('');
   const [error, setError] = useState('');
+  const [touched, setTouched] = useState(false);
+
+  const emailError = !email.trim() ? 'Enter your email address.' : !EMAIL_RE.test(email.trim()) ? 'Enter a valid email address, like name@company.com.' : '';
+  const pwError = !pw ? 'Enter your password.' : '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setTouched(true);
     setError('');
+    if (emailError || pwError) return;
     const result = await login(email.trim(), pw);
     if (result.success) {
       toast.success(`Welcome back, ${result.user.name}!`);
     } else {
-      setError(result.error);
-      toast.error(result.error);
+      setError(result.error || 'We couldn’t sign you in. Check your email and password and try again.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {message && (
-        <div style={{
-          background: '#FEF3C7', border: '1px solid #FCD34D',
-          color: '#92400E', fontSize: 13, padding: '10px 14px',
-          borderRadius: 'var(--r-md)', marginBottom: 16, lineHeight: 1.5,
-        }}>
-          {message}
-        </div>
-      )}
-      {error && <div className="auth-error">{error}</div>}
+    <form onSubmit={handleSubmit} noValidate>
+      {message && <div className="auth-notice" role="status"><Icons.Clock size={15} />{message}</div>}
+      {error && <div className="auth-error" role="alert"><Icons.Alert size={15} />{error}</div>}
 
       <div className="auth-field">
-        <label className="auth-field-label">Email address</label>
+        <label className="auth-field-label" htmlFor="signin-email">Email address</label>
         <input
-          type="email" className="input"
+          id="signin-email"
+          type="email" className="input" data-autofocus
           value={email} onChange={e => setEmail(e.target.value)}
-          required autoComplete="email" placeholder="you@appzlogic.com"
+          autoComplete="email" placeholder="you@company.com"
           disabled={authLoading}
+          aria-invalid={(touched && !!emailError) || undefined}
+          aria-describedby={touched && emailError ? 'signin-email-error' : undefined}
         />
+        <FieldError id="signin-email-error">{touched && emailError}</FieldError>
       </div>
       <div className="auth-field" style={{ marginBottom: 22 }}>
-        <label className="auth-field-label">Password</label>
+        <label className="auth-field-label" htmlFor="signin-password">Password</label>
         <PasswordField
+          id="signin-password"
           value={pw} onChange={e => setPw(e.target.value)}
-          autoComplete="current-password" placeholder="••••••••"
+          autoComplete="current-password" placeholder="Enter your password"
           disabled={authLoading}
-          onKeyDown={e => { if (e.key === 'Enter') handleSubmit(e); }}
+          invalid={touched && !!pwError}
+          describedBy={touched && pwError ? 'signin-password-error' : undefined}
         />
+        <FieldError id="signin-password-error">{touched && pwError}</FieldError>
       </div>
 
-      <button
-        type="submit" className="btn btn-primary"
-        style={{ width: '100%', justifyContent: 'center', height: 44, fontSize: 15 }}
-        disabled={authLoading}
-      >
+      <button type="submit" className="btn btn-primary btn-block auth-submit" disabled={authLoading} aria-busy={authLoading || undefined}>
         {authLoading
-          ? <><span className="btn-spinner"/> Signing in…</>
-          : 'Sign in →'
-        }
+          ? <><span className="btn-spinner-inline" aria-hidden="true" /> Signing in…</>
+          : <>Sign in <Icons.ChevronRight size={16} /></>}
       </button>
     </form>
   );
@@ -149,6 +152,8 @@ function RegisterForm({ onDone }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
+    if (!username.trim() || !email.trim()) { setError('Enter a full name and email address.'); return; }
+    if (!EMAIL_RE.test(email.trim())) { setError('Enter a valid email address.'); return; }
     if (pw !== confirm) { setError('Passwords do not match.'); return; }
     if (pw.length < 6)  { setError('Password must be at least 6 characters.'); return; }
     setLoading(true);
@@ -161,48 +166,39 @@ function RegisterForm({ onDone }) {
       setTimeout(() => onDone?.(), 2000);
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
-      toast.error(err.message || 'Registration failed.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {error && <div className="auth-error">{error}</div>}
-      {success && (
-        <div style={{
-          background: 'var(--green-soft)', border: '1px solid var(--green-mid)',
-          color: 'var(--green-dim)', fontSize: 13, padding: '10px 14px',
-          borderRadius: 'var(--r-md)', marginBottom: 16,
-        }}>
-          ✓ {success}
-        </div>
-      )}
+    <form onSubmit={handleSubmit} noValidate>
+      {error && <div className="auth-error" role="alert"><Icons.Alert size={15} />{error}</div>}
+      {success && <div className="auth-success" role="status"><Icons.Check size={15} />{success}</div>}
 
       <div className="auth-field">
-        <label className="auth-field-label">Full name</label>
-        <input type="text" className="input" value={username}
-          onChange={e => setUsername(e.target.value)} required
-          placeholder="Anshul Gupta" disabled={loading} />
+        <label className="auth-field-label" htmlFor="register-name">Full name</label>
+        <input id="register-name" type="text" className="input" value={username} data-autofocus
+          onChange={e => setUsername(e.target.value)} autoComplete="name"
+          placeholder="e.g. Jordan Miller" disabled={loading} />
       </div>
 
       <div className="auth-field">
-        <label className="auth-field-label">Email address</label>
-        <input type="email" className="input" value={email}
-          onChange={e => setEmail(e.target.value)} required
-          placeholder="name@appzlogic.com" disabled={loading} />
+        <label className="auth-field-label" htmlFor="register-email">Email address</label>
+        <input id="register-email" type="email" className="input" value={email}
+          onChange={e => setEmail(e.target.value)} autoComplete="email"
+          placeholder="name@company.com" disabled={loading} />
       </div>
 
       <div className="auth-field">
-        <label className="auth-field-label">Role</label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7 }}>
+        <span className="auth-field-label" id="register-role-label">Role</span>
+        <div role="radiogroup" aria-labelledby="register-role-label" style={{ display: 'grid', gridTemplateColumns: `repeat(${ADMIN_ROLES.length},1fr)`, gap: 8 }}>
           {ADMIN_ROLES.map(r => {
             const m = ROLE_META[r.toLowerCase()];
             const sel = role === r;
             return (
-              <button key={r} type="button" onClick={() => setRole(r)} style={{
-                padding: '9px 0',
+              <button key={r} type="button" role="radio" aria-checked={sel} onClick={() => setRole(r)} style={{
+                padding: '10px 0',
                 border: `1.5px solid ${sel ? m.color : 'var(--border)'}`,
                 borderRadius: 'var(--r-md)', fontSize: 13, fontWeight: 600,
                 background: sel ? m.bg : 'var(--white)',
@@ -216,37 +212,31 @@ function RegisterForm({ onDone }) {
         </div>
         <div style={{ fontSize: 12, color: 'var(--slate)', marginTop: 7, lineHeight: 1.55 }}>
           <strong>Admin</strong> — full access ·{' '}
-          <strong>Reviewer</strong> — review &amp; approve ·{' '}
-          <strong>User</strong> — view &amp; comment
+          <strong>Reviewer</strong> — review &amp; approve assessments
         </div>
       </div>
 
       <div className="auth-field">
-        <label className="auth-field-label">Password</label>
+        <label className="auth-field-label" htmlFor="register-password">Password</label>
         <PasswordField
+          id="register-password"
           value={pw} onChange={e => setPw(e.target.value)}
-          autoComplete="new-password" placeholder="Min. 6 characters"
+          autoComplete="new-password" placeholder="At least 6 characters"
           disabled={loading}
         />
       </div>
       <div className="auth-field" style={{ marginBottom: 22 }}>
-        <label className="auth-field-label">Confirm password</label>
+        <label className="auth-field-label" htmlFor="register-confirm">Confirm password</label>
         <PasswordField
+          id="register-confirm"
           value={confirm} onChange={e => setConfirm(e.target.value)}
           autoComplete="new-password" placeholder="Repeat password"
           disabled={loading}
         />
       </div>
 
-      <button
-        type="submit" className="btn btn-primary"
-        style={{ width: '100%', justifyContent: 'center', height: 44, fontSize: 15 }}
-        disabled={loading}
-      >
-        {loading
-          ? <><span className="btn-spinner"/> Creating account…</>
-          : 'Create account'
-        }
+      <button type="submit" className="btn btn-primary btn-block auth-submit" disabled={loading} aria-busy={loading || undefined}>
+        {loading ? <><span className="btn-spinner-inline" aria-hidden="true" /> Creating account…</> : 'Create account'}
       </button>
     </form>
   );
@@ -255,58 +245,34 @@ function RegisterForm({ onDone }) {
 /* ── Card content ─────────────────────────────────────── */
 function LoginCard({ message, onClose }) {
   const [tab, setTab] = useState('signin');
+  const cardRef = useRef(null);
+  useDialog(cardRef, onClose);
 
   return (
-    /* Outer wrapper — not scrollable, holds the close button */
-    <div style={{ position: 'relative' }}>
-
-      {/* Close button — outside the scrollable area so it never scrolls away */}
+    <div className="auth-card-wrap" ref={cardRef} role="dialog" aria-modal={onClose ? 'true' : undefined} aria-labelledby="auth-title" tabIndex={-1}>
       {onClose && (
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute', top: -12, right: -12, zIndex: 10,
-            width: 32, height: 32,
-            background: 'var(--white)', border: '1px solid var(--border)',
-            borderRadius: '50%', cursor: 'pointer',
-            color: 'var(--slate)', padding: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: 'var(--shadow-sm)',
-            transition: 'background .15s, color .15s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--risk-high-bg)'; e.currentTarget.style.color = 'var(--risk-high-text)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'var(--white)'; e.currentTarget.style.color = 'var(--slate)'; }}
-          aria-label="Close"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+        <button type="button" className="auth-close" onClick={onClose} aria-label="Close sign-in">
+          <Icons.X size={16} />
         </button>
       )}
 
-      {/* Scrollable card content */}
-      <div className="auth-card" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-
-        {/* Logo */}
-        <div className="auth-logo" style={{ justifyContent: 'center' }}>
-          <img src="/MainLogo.png" alt="DPDPA" style={{ height: 58, width: 'auto', objectFit: 'contain' }} />
+      <div className="auth-card">
+        <div className="auth-logo">
+          <img src="/AssurifyLogo.svg" alt="Assurify" />
         </div>
 
-        <h2 className="auth-title">Admin Portal</h2>
-        <p className="auth-sub" style={{ marginBottom: 20 }}>
-          {tab === 'signin' ? 'Sign in to your account' : 'Create an admin account'}
+        <h2 className="auth-title" id="auth-title">{tab === 'signin' ? 'Sign in to Assurify' : 'Create an account'}</h2>
+        <p className="auth-sub">
+          {tab === 'signin' ? 'Use your work email to access your compliance workspace.' : 'For administrators and privacy reviewers.'}
         </p>
 
-        {/* Tab toggle */}
-        <div className="auth-role-toggle" style={{ marginBottom: 24 }}>
-          <button type="button"
+        <div className="auth-role-toggle" role="tablist" aria-label="Sign in or register">
+          <button type="button" role="tab" aria-selected={tab === 'signin'}
             className={`auth-role-btn${tab === 'signin' ? ' active' : ''}`}
             onClick={() => setTab('signin')}>
             Sign in
           </button>
-          <button type="button"
+          <button type="button" role="tab" aria-selected={tab === 'register'}
             className={`auth-role-btn${tab === 'register' ? ' active' : ''}`}
             onClick={() => setTab('register')}>
             Register
@@ -324,40 +290,9 @@ function LoginCard({ message, onClose }) {
 
 /* ── Login shell — modal or full-page ────────────────── */
 export default function Login({ onClose, message }) {
-  const backdropRef = useRef(null);
-
-  const handleBackdrop = (e) => {
-    if (onClose && e.target === backdropRef.current) onClose();
-  };
-
-  useEffect(() => {
-    if (!onClose) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  if (onClose) {
-    return (
-      <div
-        ref={backdropRef}
-        onClick={handleBackdrop}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 1000,
-          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 16,
-        }}
-      >
-        <LoginCard message={message} onClose={onClose} />
-      </div>
-    );
-  }
-
-  /* Full-page fallback (session expired — no close button) */
   return (
-    <div className="auth-root">
-      <LoginCard message={message} onClose={null} />
+    <div className="auth-backdrop" onMouseDown={onClose ? (e) => { if (e.target === e.currentTarget) onClose(); } : undefined}>
+      <LoginCard message={message} onClose={onClose || null} />
     </div>
   );
 }

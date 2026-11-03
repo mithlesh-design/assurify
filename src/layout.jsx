@@ -103,8 +103,8 @@ const PAGE_TITLES = {
 };
 
 
-function Sidebar({ active, onNavigate, onLogout, nav = NAV, portalLabel, open = false, onClose }) {
-  const { user, logout, controls } = useApp();
+function Sidebar({ active, onNavigate, onLogout, nav = NAV, portalLabel, open = false, onClose, onSwitchWorkspace }) {
+  const { user, logout, controls, tenant } = useApp();
   const ref           = useRef(null);
   const handleLogout  = onLogout ?? logout;
   const isOblPage     = active.startsWith('obl-');
@@ -145,6 +145,20 @@ function Sidebar({ active, onNavigate, onLogout, nav = NAV, portalLabel, open = 
             <Icons.X size={16} />
           </button>
         </div>
+
+        {/* Current client workspace (reviewers/customers) */}
+        {!isAdmin && tenant && onSwitchWorkspace && (
+          <div className="sidebar-workspace">
+            <span className="sidebar-workspace-avatar" aria-hidden="true">{tenant.name.slice(0, 2).toUpperCase()}</span>
+            <span className="sidebar-workspace-body">
+              <span className="sidebar-workspace-label">Workspace</span>
+              <span className="sidebar-workspace-name" title={tenant.name}>{tenant.name}</span>
+            </span>
+            <button type="button" className="sidebar-workspace-switch" onClick={() => { onClose?.(); onSwitchWorkspace(); }}>
+              Switch
+            </button>
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="sidebar-nav-scroll">

@@ -11,7 +11,10 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Icons, Button, Modal, Progress } from '../ui';
+import {
+  Icons, Button, Modal, Progress, Badge, EmptyState, ErrorState, FilterChips, LoadingState, PageActions, SearchInput,
+} from '../ui';
+import { downloadCsv, formatDate, formatNumber, humanize } from '../lib/format';
 import {
   fetchRopaRecords, fetchRopaDashboard, fetchRopaQuestions, createRopaRecord, upsertRopaResponses,
 } from '../api/services/ropa';
@@ -27,52 +30,25 @@ import { encodeRopaAnswer, questionsForSections, ROPA_SECTION_GROUPS } from '../
    Shared mini-components
 ═══════════════════════════════════════════════════════════ */
 
+const STATUS_TONE = { active: 'success', inactive: 'neutral', under_review: 'warning' };
 function StatusBadge({ status }) {
   const m = STATUS_META[status] ?? STATUS_META.active;
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 12, fontWeight: 600, padding: '3px 9px',
-      borderRadius: 'var(--r-pill)',
-      background: m.bg, color: m.text, border: `1px solid ${m.border}`,
-      whiteSpace: 'nowrap',
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
-      {m.label}
-    </span>
-  );
+  return <Badge tone={STATUS_TONE[status] ?? 'success'} dot>{m.label}</Badge>;
 }
 
+const SENSITIVITY_TONE = { high: 'danger', medium: 'warning', low: 'success' };
 function SensitivityBadge({ level }) {
-  if (!level) return <span style={{ color: 'var(--muted)', fontSize: 12 }}>—</span>;
-  const m = SENSITIVITY_META[String(level).toLowerCase()] ?? SENSITIVITY_META.low;
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 12, fontWeight: 700, padding: '3px 8px',
-      borderRadius: 'var(--r-pill)',
-      background: m.bg, color: m.text, border: `1px solid ${m.border}`,
-      textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
-      {m.label}
-    </span>
-  );
+  if (!level) return <span className="dt-muted">—</span>;
+  const key = String(level).toLowerCase();
+  const m = SENSITIVITY_META[key] ?? SENSITIVITY_META.low;
+  return <Badge tone={SENSITIVITY_TONE[key] ?? 'success'} dot>{m.label}</Badge>;
 }
 
+const DPA_TONE = { yes: 'success', no: 'danger', pending: 'warning' };
 function DpaBadge({ status }) {
-  if (!status) return <span style={{ color: 'var(--muted)', fontSize: 12 }}>—</span>;
+  if (!status) return <span className="dt-muted">—</span>;
   const m = DPA_STATUS_META[status] ?? DPA_STATUS_META.pending;
-  return (
-    <span style={{
-      fontSize: 12, fontWeight: 600, padding: '3px 9px',
-      borderRadius: 'var(--r-pill)',
-      background: m.bg, color: m.text, border: `1px solid ${m.border}`,
-      whiteSpace: 'nowrap',
-    }}>
-      {m.label}
-    </span>
-  );
+  return <Badge tone={DPA_TONE[status] ?? 'warning'}>{m.label}</Badge>;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -105,75 +81,32 @@ const IcoGlobe   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="n
    Register table row
 ═══════════════════════════════════════════════════════════ */
 
-const ROW_GRID = '90px 1fr 150px 110px 180px 90px 80px 38px';
-
 function RecordRow({ record, onSelect }) {
+  const open = () => onSelect(record.id);
   return (
-    <div style={{
-      background: 'var(--white)',
-      border: '1px solid var(--border)',
-      borderLeft: `3px solid ${SENSITIVITY_META[String(record.sensitivity_level ?? '').toLowerCase()]?.dot ?? '#94A3B8'}`,
-      borderRadius: 'var(--r-lg)',
-      boxShadow: 'var(--shadow-sm)',
-      overflow: 'hidden',
-    }}>
-      <div
-        style={{ display: 'grid', gridTemplateColumns: ROW_GRID, alignItems: 'center', gap: 0, padding: '13px 18px', cursor: 'pointer', userSelect: 'none' }}
-        onClick={() => onSelect(record.id)}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-      >
-        {/* RoPA ID */}
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--green-dim)' }}>
-          {record.ropa_id}
+    <tr className="is-clickable" tabIndex={0} onClick={open} onKeyDown={e => { if (e.key === 'Enter') open(); }}>
+      <td className="dt-primary">
+        <div className="dt-title">{record.processing_activity}</div>
+        <div className="dt-sub"><span className="dt-mono">{record.ropa_id}</span>{record.department && <span>{record.department}</span>}</div>
+        <div className="dt-sub dt-fold">
+          <span>Legal basis: {humanize(record.legal_basis_dpdpa)}</span>
+          {record.data_principals && <span>{record.data_principals}</span>}
         </div>
-
-        {/* Activity + Department */}
-        <div style={{ paddingRight: 16, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {record.processing_activity}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-            {record.department}
-          </div>
-        </div>
-
-        {/* Sensitivity */}
-        <div style={{ paddingRight: 16 }}>
-          <SensitivityBadge level={record.sensitivity_level} />
-        </div>
-
-        {/* Legal Basis */}
-        <div style={{ paddingRight: 16 }}>
-          <span style={{ fontSize: 12, color: 'var(--slate)', fontWeight: 500 }}>
-            {record.legal_basis_dpdpa || '—'}
-          </span>
-        </div>
-
-        {/* Data Principals + Volume */}
-        <div style={{ paddingRight: 16 }}>
-          <div style={{ fontSize: 12.5, color: 'var(--ink)', fontWeight: 600 }}>{record.data_principals || '—'}</div>
-          {record.volume != null && record.volume !== '' && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{record.volume} individuals</div>}
-        </div>
-
-        {/* DPA */}
-        <div style={{ paddingRight: 12 }}>
-          <DpaBadge status={record.dpa_in_place} />
-        </div>
-
-        {/* Status */}
-        <div>
-          <StatusBadge status={record.status} />
-        </div>
-
-        {/* Chevron */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Icons.Chevron size={13} style={{ color: 'var(--slate)' }} />
-          </div>
-        </div>
-      </div>
-    </div>
+      </td>
+      <td data-label="Sensitivity"><SensitivityBadge level={record.sensitivity_level} /></td>
+      <td className="dt-col-secondary" data-label="Legal basis">{humanize(record.legal_basis_dpdpa)}</td>
+      <td className="dt-col-secondary" data-label="Data Principals">
+        <div>{record.data_principals || <span className="dt-muted">—</span>}</div>
+        {record.volume != null && record.volume !== '' && <div className="dt-sub">{formatNumber(record.volume)} individuals</div>}
+      </td>
+      <td data-label="DPA in place"><DpaBadge status={record.dpa_in_place} /></td>
+      <td data-label="Status"><StatusBadge status={record.status} /></td>
+      <td className="dt-actions">
+        <Button size="sm" variant="ghost" aria-label={`Open ${record.ropa_id}`} onClick={e => { e.stopPropagation(); open(); }}>
+          Open <Icons.ChevronRight size={14} />
+        </Button>
+      </td>
+    </tr>
   );
 }
 
@@ -789,8 +722,8 @@ const FILTER_TABS = [
   { id: 'all',          label: 'All' },
   { id: 'active',       label: 'Active' },
   { id: 'inactive',     label: 'Inactive' },
-  { id: 'under_review', label: 'Under Review' },
-  { id: 'high',         label: 'High Sensitivity' },
+  { id: 'under_review', label: 'Under review' },
+  { id: 'high',         label: 'High sensitivity' },
 ];
 
 function PageRopa({ onAction, onSelectRecord, onSummary }) {
@@ -863,22 +796,41 @@ function PageRopa({ onAction, onSelectRecord, onSummary }) {
     onAction?.('Processing activity added successfully.');
   };
 
+  /* Export the register (current filters applied) as a CSV file that opens in Excel */
+  const exportRegister = () => {
+    const rows = filtered.length ? filtered : records;
+    downloadCsv(`RoPA-register-${new Date().toISOString().slice(0, 10)}.csv`, rows, [
+      { header: 'RoPA ID', value: r => r.ropa_id },
+      { header: 'Processing activity', value: r => r.processing_activity },
+      { header: 'Department', value: r => r.department },
+      { header: 'Sensitivity', value: r => humanize(r.sensitivity_level, '') },
+      { header: 'Legal basis (DPDPA)', value: r => humanize(r.legal_basis_dpdpa, '') },
+      { header: 'Data Principals', value: r => r.data_principals },
+      { header: 'Volume (individuals)', value: r => r.volume },
+      { header: 'DPA in place', value: r => humanize(r.dpa_in_place, '') },
+      { header: 'Status', value: r => STATUS_META[r.status]?.label ?? r.status },
+      { header: 'Process owner', value: r => r.process_owner },
+      { header: 'Last updated', value: r => (r.last_updated ? formatDate(r.last_updated, '') : '') },
+    ]);
+    onAction?.(`Exported ${rows.length} processing ${rows.length === 1 ? 'activity' : 'activities'} to CSV (opens in Excel).`);
+  };
+
   return (
     <>
       <div className="page">
+        <PageActions>
+          <Button icon={<Icons.Download size={15} />} onClick={exportRegister} disabled={loading || !records.length} title="Download the register as a CSV file that opens in Excel">
+            Export to Excel
+          </Button>
+          <Button variant="primary" icon={<Icons.Plus size={15} />} onClick={() => setShowAdd(true)}>Add activity</Button>
+        </PageActions>
 
         {/* ── Tab bar ──────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
-          {[{ id: 'register', label: 'RoPA Register' }, { id: 'dashboard', label: 'Dashboard & Checklist' }].map(t => (
-            <button key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              style={{
-                padding: '9px 20px', fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
-                background: 'transparent', border: 'none', fontFamily: 'inherit',
-                color: activeTab === t.id ? 'var(--green-dim)' : 'var(--muted)',
-                borderBottom: `2.5px solid ${activeTab === t.id ? 'var(--green)' : 'transparent'}`,
-                marginBottom: -1, transition: 'color .14s, border-color .14s',
-              }}>
+        <div className="tabs page-tabs" role="tablist" aria-label="RoPA views">
+          {[{ id: 'register', label: 'Register' }, { id: 'dashboard', label: 'Dashboard & checklist' }].map(t => (
+            <button key={t.id} type="button" role="tab" aria-selected={activeTab === t.id}
+              className={`tab${activeTab === t.id ? ' active' : ''}`}
+              onClick={() => setActiveTab(t.id)}>
               {t.label}
             </button>
           ))}
@@ -886,32 +838,24 @@ function PageRopa({ onAction, onSelectRecord, onSummary }) {
 
         {/* ── Loading / error ───────────────────────────────── */}
         {loading ? (
-          <div style={{ padding: '60px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-            <span style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
-            <span style={{ color: 'var(--muted)', fontSize: 13 }}>Loading RoPA register…</span>
-          </div>
+          <LoadingState label="Loading RoPA register…" />
         ) : error ? (
-          <div style={{ padding: '32px 24px', textAlign: 'center', background: 'var(--risk-high-bg)', border: '1px solid var(--risk-high-border)', borderRadius: 'var(--r-lg)' }}>
-            <div style={{ fontWeight: 700, color: 'var(--risk-high-text)', marginBottom: 4 }}>Failed to load records</div>
-            <div style={{ fontSize: 13, color: 'var(--risk-high-text)', opacity: 0.75 }}>{error}</div>
-          </div>
+          <ErrorState title="Couldn't load processing activities" message={error} onRetry={loadRecords} />
         ) : activeTab === 'dashboard' ? (
           dashboardError
-            ? <div style={{ padding: '24px', textAlign: 'center', color: 'var(--risk-high-text)', background: 'var(--risk-high-bg)', border: '1px solid var(--risk-high-border)', borderRadius: 'var(--r-lg)' }}>Failed to load dashboard: {dashboardError}</div>
+            ? <ErrorState title="Couldn't load the RoPA dashboard" message={dashboardError} onRetry={loadDashboard} />
             : <DashboardTab stats={stats} />
         ) : (
           <>
             {/* ── Stat tiles ──────────────────────────────── */}
             {dashboardError && (
-              <div style={{ padding: '10px 14px', marginBottom: 14, borderRadius: 'var(--r-md)', background: 'var(--risk-high-bg)', color: 'var(--risk-high-text)', border: '1px solid var(--risk-high-border)', fontSize: 13 }}>
-                Failed to load live RoPA dashboard counts: {dashboardError}
-              </div>
+              <div style={{ marginBottom: 14 }}><ErrorState title="Live dashboard counts are unavailable" message={dashboardError} onRetry={loadDashboard} /></div>
             )}
-            <div className="stat-grid-3" style={{ marginBottom: 20, gridTemplateColumns: 'repeat(4, 1fr)' }}>
-              <StatTile icon={IcoFile}   label="Total Activities"   value={stats.total}           sub={`${stats.active} active`}       accent="#00AABF" />
-              <StatTile icon={IcoAlert}  label="High Sensitivity"   value={stats.high_sensitivity} sub="Require strict controls"       accent="#EF4444" />
-              <StatTile icon={IcoShield} label="DPIA Required"      value={stats.dpia_required}   sub="High-risk processing"          accent="#8B5CF6" />
-              <StatTile icon={IcoGlobe}  label="Cross-Border"       value={stats.cross_border}    sub="International transfers"       accent="#F59E0B" />
+            <div className="tile-grid" style={{ marginBottom: 20 }}>
+              <StatTile icon={IcoFile}   label="Total activities"   value={stats.total}           sub={`${stats.active} active`}       accent="#00AABF" />
+              <StatTile icon={IcoAlert}  label="High sensitivity"   value={stats.high_sensitivity} sub="Require strict controls"       accent="#EF4444" />
+              <StatTile icon={IcoShield} label="DPIA required"      value={stats.dpia_required}   sub="High-risk processing"          accent="#8B5CF6" />
+              <StatTile icon={IcoGlobe}  label="Cross-border"       value={stats.cross_border}    sub="International transfers"       accent="#F59E0B" />
             </div>
 
             {/* ── Alert banners ────────────────────────────── */}
@@ -922,54 +866,48 @@ function PageRopa({ onAction, onSelectRecord, onSummary }) {
               </div>
             )}
 
-            {/* ── Search + filter ──────────────────────────── */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div className="search" style={{ flex: '1 1 240px', maxWidth: 340 }}>
-                <Icons.Search size={15} style={{ color: 'var(--muted)' }} />
-                <input placeholder="Search activities, departments, legal basis…" value={query} onChange={e => setQuery(e.target.value)} />
+            <section className="table-card">
+              <div className="table-toolbar">
+                <SearchInput value={query} onChange={setQuery} label="Search processing activities" placeholder="Search activities, departments, legal basis" />
+                <FilterChips
+                  label="Filter processing activities"
+                  value={filter}
+                  onChange={setFilter}
+                  items={FILTER_TABS.map(f => ({
+                    key: f.id,
+                    label: f.label,
+                    count: f.id === 'all' ? records.length : f.id === 'high' ? stats.high_sensitivity : records.filter(r => r.status === f.id).length,
+                  }))}
+                />
               </div>
-              <div className="assess-filter-bar" style={{ marginBottom: 0, flex: '1 1 auto' }}>
-                {FILTER_TABS.map(f => {
-                  const count = f.id === 'all' ? records.length
-                    : f.id === 'high' ? stats.high_sensitivity
-                    : records.filter(r => r.status === f.id).length;
-                  return (
-                    <button key={f.id} className={`assess-chip${filter === f.id ? ' active' : ''}`}
-                      onClick={() => setFilter(f.id)}>
-                      {f.label}
-                      <span className="assess-chip-count">{count}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              {filtered.length === 0 ? (
+                <EmptyState
+                  compact
+                  icon={<IcoFile />}
+                  title={query ? 'No activities match your search' : records.length ? 'No processing activities in this category' : 'No processing activities yet'}
+                  description={records.length ? 'Try another search term or filter.' : 'Add your first processing activity to start the register.'}
+                  action={records.length
+                    ? <Button size="sm" onClick={() => { setQuery(''); setFilter('all'); }}>Clear filters</Button>
+                    : <Button size="sm" variant="primary" icon={<Icons.Plus size={14} />} onClick={() => setShowAdd(true)}>Add activity</Button>}
+                />
+              ) : (
+                <table className="data-table">
+                  <thead><tr>
+                    <th scope="col">Processing activity</th>
+                    <th scope="col">Sensitivity</th>
+                    <th scope="col" className="dt-col-secondary">Legal basis</th>
+                    <th scope="col" className="dt-col-secondary">Data Principals</th>
+                    <th scope="col">DPA</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"><span className="sr-only">Open</span></th>
+                  </tr></thead>
+                  <tbody>
+                    {filtered.map(r => <RecordRow key={r.id} record={r} onSelect={onSelectRecord} />)}
+                  </tbody>
+                </table>
+              )}
+            </section>
 
-            {/* ── Register list ────────────────────────────── */}
-            {filtered.length === 0 ? (
-              <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IcoFile />
-                </div>
-                <div style={{ fontSize: 14, color: 'var(--muted)' }}>
-                  {query ? 'No activities match your search.' : 'No processing activities in this category.'}
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {/* Column header */}
-                <div style={{ display: 'grid', gridTemplateColumns: ROW_GRID, alignItems: 'center', gap: 0, padding: '4px 18px 10px', borderBottom: '1px solid var(--border-soft)' }}>
-                  {['RoPA ID', 'Processing Activity', 'Sensitivity', 'Legal Basis', 'Data Principals', 'DPA', 'Status', ''].map((col, i) => (
-                    <div key={i} style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{col}</div>
-                  ))}
-                </div>
-                {filtered.map(r => (
-                  <RecordRow key={r.id} record={r} onSelect={onSelectRecord} />
-                ))}
-              </div>
-            )}
-
-            {/* Portal trigger (header "Add activity" button) */}
-            <div data-add-ropa-portal style={{ display: 'none' }} onClick={() => setShowAdd(true)} />
           </>
         )}
       </div>

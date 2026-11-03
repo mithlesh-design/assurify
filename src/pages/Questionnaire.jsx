@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useApp }             from '../context/AppContext';
 import { fetchQuestionnaire } from '../api/services/tenants';
+import { EmptyState, ErrorState, Icons, LoadingState } from '../ui';
 
 function groupByCategory(items) {
   return items.reduce((acc, q) => {
@@ -67,39 +68,25 @@ export default function PageQuestionnaire({ onAction, onSummary }) {
   }, [onSummary, loading, error, items.length, answered]);
 
   if (loading) {
-    return (
-      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-        <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 14 }}>
-          <div style={{
-            width: 28, height: 28, border: '3px solid var(--border)',
-            borderTop: '3px solid var(--green)', borderRadius: '50%',
-            animation: 'spin .8s linear infinite', margin: '0 auto 12px',
-          }} />
-          Loading questionnaire…
-        </div>
-      </div>
-    );
+    return <div className="page"><LoadingState label="Loading onboarding responses…" /></div>;
   }
 
   if (error) {
     return (
-      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>⚠️</div>
-          <div style={{ fontSize: 14, color: 'var(--risk-high-text)', marginBottom: 16 }}>{error}</div>
-          <button className="btn btn-secondary" onClick={load}>Retry</button>
-        </div>
+      <div className="page">
+        <ErrorState title="Couldn't load onboarding responses" message={error} onRetry={load} />
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-        <div style={{ textAlign: 'center', color: 'var(--muted)' }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-          <div style={{ fontSize: 14 }}>No questionnaire responses found for this tenant.</div>
-        </div>
+      <div className="page">
+        <EmptyState
+          icon={<Icons.Clipboard size={22} />}
+          title="No onboarding responses yet"
+          description="Responses appear here once the client completes the onboarding questionnaire."
+        />
       </div>
     );
   }
@@ -107,7 +94,8 @@ export default function PageQuestionnaire({ onAction, onSummary }) {
   return (
     <div className="page">
       {/* Stats */}
-      <div className="stat-grid" style={{ marginBottom: 24 }}>
+      <p className="page-lead">Answers the client gave in the onboarding questionnaire. They help scope the assessment and the RoPA register.</p>
+      <div className="tile-grid" style={{ marginBottom: 24 }}>
         <div className="stat-tile">
           <div className="stat-tile-label">Total questions</div>
           <div className="stat-tile-value">{items.length}</div>

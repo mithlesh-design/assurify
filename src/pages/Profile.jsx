@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useApp }   from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
+import { Icons } from '../ui';
+import { formatDate } from '../lib/format';
 import { getUser, updateUser, uploadCertificates, getUserFiles, deleteFile } from '../api/services/profile';
 
 /* ── Spinner ────────────────────────────────────────── */
@@ -51,44 +53,36 @@ function CertRow({ cert, onDelete }) {
           {cert.name}
         </div>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>
-          {new Date(cert.uploadedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          Uploaded {formatDate(cert.uploadedAt)}
         </div>
       </div>
 
       {/* Actions */}
       {confirm ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-          <span style={{ fontSize: 12, color: '#B91C1C', fontWeight: 600 }}>Delete?</span>
+          <span style={{ fontSize: 12, color: '#B91C1C', fontWeight: 600 }}>Delete this file?</span>
           <button onClick={handleDelete} disabled={deleting} style={{
             background: '#DC2626', color: '#fff', border: 'none',
             borderRadius: 5, padding: '3px 9px', fontSize: 12,
             fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
           }}>
-            {deleting ? <Spin size={11} /> : 'Yes'}
+            {deleting ? <Spin size={11} /> : 'Delete'}
           </button>
           <button onClick={() => setConfirm(false)} style={{
             background: 'none', border: '1px solid var(--border)', borderRadius: 5,
             padding: '3px 8px', fontSize: 12, color: 'var(--slate)', cursor: 'pointer',
-          }}>No</button>
+          }}>Cancel</button>
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {cert.url && (
-            <a href={cert.url} download target="_blank" rel="noreferrer" style={{
-              fontSize: 12, fontWeight: 600, color: 'var(--green)',
-              textDecoration: 'none', padding: '3px 9px',
-              border: '1px solid var(--green-mid)', borderRadius: 5,
-              background: 'var(--green-soft)',
-            }}>↓</a>
+            <a href={cert.url} download target="_blank" rel="noreferrer" className="icon-btn" aria-label={`Download ${cert.name}`} title="Download">
+              <Icons.Download size={15} />
+            </a>
           )}
-          <button onClick={() => setConfirm(true)} title="Delete" style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--muted)', fontSize: 14, lineHeight: 1, padding: '3px',
-            borderRadius: 4, transition: 'color .12s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = '#DC2626'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
-          >🗑</button>
+          <button type="button" className="icon-btn icon-btn-danger" onClick={() => setConfirm(true)} aria-label={`Delete ${cert.name}`} title="Delete">
+            <Icons.Trash size={15} />
+          </button>
         </div>
       )}
     </div>
@@ -122,7 +116,7 @@ function StagedRow({ file, onRemove }) {
       <button onClick={() => onRemove(file)} style={{
         background: 'none', border: 'none', cursor: 'pointer',
         color: 'var(--green-dim)', fontSize: 15, lineHeight: 1, padding: '2px 4px',
-      }}>✕</button>
+      }} aria-label="Remove file"><Icons.X size={14} /></button>
     </div>
   );
 }
@@ -530,7 +524,7 @@ export default function PageProfile() {
           >
             {saving
               ? <><span className="btn-spinner" /> Saving…</>
-              : <>Save changes →</>
+              : <>Save changes</>
             }
           </button>
         </div>

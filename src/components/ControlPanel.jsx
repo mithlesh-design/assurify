@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { Icons, useDialog } from '../ui';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import { OBL_META, STATUS_META, statusClass, statusLabel } from '../data/controls';
@@ -153,7 +154,7 @@ function DocItem({ doc }) {
 
   return (
     <div className="cp-doc-item">
-      <div className="cp-doc-icon">📄</div>
+      <div className="cp-doc-icon"><Icons.File size={18} /></div>
       <div className="cp-doc-info">
         <div className="cp-doc-name">{doc.name}</div>
         <div className="cp-doc-meta">
@@ -382,18 +383,22 @@ export default function ControlPanel({ ctrl, onClose, staticMode = false, onStat
     toast.info('Help request sent to reviewer.');
   };
 
+  /* Escape closes the panel; focus moves into it and returns to the control row on close */
+  const panelRef = useRef(null);
+  useDialog(panelRef, onClose);
+
   return (
     <>
       <div className="cp-backdrop" onClick={onClose} />
-      <div className="cp-panel">
+      <div className="cp-panel" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="cp-panel-title" tabIndex={-1}>
 
         {/* ── Header ── */}
         <div className="cp-header">
-          <button className="cp-close" onClick={onClose}>✕</button>
+          <button type="button" className="cp-close" onClick={onClose} aria-label="Close panel"><Icons.X size={16} /></button>
           <div className="cp-obl-tag">{ctrl.obl?.replace(/_/g, ' ')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 44, marginBottom: 8 }}>
             <StatusDot status={ctrl.status} />
-            <h3 className="cp-ctrl-name" style={{ margin: 0, paddingRight: 0 }}>{ctrl.name}</h3>
+            <h3 id="cp-panel-title" className="cp-ctrl-name" style={{ margin: 0, paddingRight: 0 }}>{ctrl.name}</h3>
           </div>
           <div className="cp-ctrl-meta">
 

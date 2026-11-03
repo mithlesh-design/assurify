@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Icons } from '../ui';
 import { useApp }               from '../context/AppContext';
 import { useToast }             from '../context/ToastContext';
 import { updateUser, uploadCertificates } from '../api/services/profile';
@@ -31,7 +32,7 @@ function StagedFile({ file, onRemove }) {
         background: 'none', border: 'none', cursor: 'pointer',
         color: 'var(--muted)', fontSize: 16, lineHeight: 1, padding: '0 4px',
         flexShrink: 0,
-      }}>✕</button>
+      }} aria-label="Remove file"><Icons.X size={14} /></button>
     </div>
   );
 }

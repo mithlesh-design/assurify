@@ -22,67 +22,89 @@ export const CAT_ICONS = {
   operational:            <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3"/><line x1="7.5" y1="2" x2="7.5" y2="4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><line x1="7.5" y1="11" x2="7.5" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><line x1="2" y1="7.5" x2="4" y2="7.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><line x1="11" y1="7.5" x2="13" y2="7.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
 };
 
-/* ── Inline dropdown (DPA / response status) ─────────── */
-export function InlineDropdown({ options, current, onSelect, renderBadge, saving }) {
+/* ── Inline dropdown (DPA / response status) ───────────
+   Badge-styled trigger with a keyboard-accessible menu. The menu is fixed-
+   positioned so table containers never clip it, and flips up near the bottom. */
+export function InlineDropdown({ options, current, onSelect, renderBadge, saving, label = 'Change status' }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos]   = useState({ top: 0, right: 0 });
+  const [pos, setPos]   = useState(null);
   const menuRef = useRef(null);
   const btnRef  = useRef(null);
 
   useEffect(() => {
-    if (!open) return;
-    function handler(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target) &&
-          btnRef.current  && !btnRef.current.contains(e.target)) {
-        setOpen(false);
+    if (!open) return undefined;
+    const place = () => {
+      const r = btnRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const menuH = menuRef.current?.offsetHeight || options.length * 41 + 12;
+      const below = r.bottom + 6 + menuH <= window.innerHeight - 8;
+      setPos({
+        top: below ? r.bottom + 6 : Math.max(8, r.top - 6 - menuH),
+        left: Math.min(Math.max(8, r.left), window.innerWidth - 208),
+      });
+    };
+    place();
+    const onDown = (e) => {
+      if (!menuRef.current?.contains(e.target) && !btnRef.current?.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); btnRef.current?.focus(); return; }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const items = [...(menuRef.current?.querySelectorAll('[role="menuitemradio"]') ?? [])];
+        const i = items.indexOf(document.activeElement);
+        items[(e.key === 'ArrowDown' ? i + 1 : i - 1 + items.length) % items.length]?.focus();
       }
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  function handleToggle(e) {
-    e.stopPropagation();
-    if (!open && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
-    }
-    setOpen(o => !o);
-  }
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey, true);
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    requestAnimationFrame(() => menuRef.current?.querySelector('[aria-checked="true"], [role="menuitemradio"]')?.focus());
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [open, options.length]);
 
   return (
-    <div style={{ display: 'inline-block' }}>
-      <button ref={btnRef} onClick={handleToggle}
-        style={{ background: 'none', border: 'none', padding: 0, cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit' }}
-        disabled={saving}>
+    <span className="inline-dropdown">
+      <button
+        ref={btnRef}
+        type="button"
+        className="inline-dropdown-trigger"
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        disabled={saving}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`${label}: ${current ?? 'not set'}`}
+        aria-busy={saving || undefined}
+      >
         {renderBadge(current)}
       </button>
       {open && (
-        <div ref={menuRef} style={{
-          position: 'fixed', top: pos.top, right: pos.right,
-          background: 'var(--white)', border: '1.5px solid var(--border)',
-          borderRadius: 'var(--r-md)', boxShadow: '0 12px 36px rgba(0,0,0,0.16)',
-          minWidth: 178, zIndex: 9999, overflow: 'hidden',
-        }}>
-          {options.map((opt, i) => (
-            <button key={opt}
-              onClick={e => { e.stopPropagation(); setOpen(false); onSelect(opt); }}
-              style={{
-                display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left',
-                background: opt.toLowerCase() === current?.toLowerCase() ? 'var(--surface)' : 'transparent',
-                border: 'none', borderBottom: i < options.length - 1 ? '1px solid var(--border-soft)' : 'none',
-                cursor: 'pointer', fontSize: 13,
-                fontWeight: opt.toLowerCase() === current?.toLowerCase() ? 700 : 500,
-                color: 'var(--ink)', fontFamily: 'inherit',
-              }}
-              onMouseEnter={e => { if (opt.toLowerCase() !== current?.toLowerCase()) e.currentTarget.style.background = 'var(--surface)'; }}
-              onMouseLeave={e => { if (opt.toLowerCase() !== current?.toLowerCase()) e.currentTarget.style.background = 'transparent'; }}>
-              {opt}
-            </button>
-          ))}
+        <div ref={menuRef} role="menu" className="row-actions-menu" style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999 }} onClick={e => e.stopPropagation()}>
+          {options.map(opt => {
+            const selected = opt.toLowerCase() === current?.toLowerCase();
+            return (
+              <button
+                key={opt}
+                type="button"
+                role="menuitemradio"
+                aria-checked={selected}
+                className={`row-actions-item${selected ? ' is-selected' : ''}`}
+                onClick={() => { setOpen(false); if (!selected) onSelect(opt); }}
+              >
+                <span className="row-actions-icon">{selected ? <Icons.Check size={14} /> : <span style={{ width: 14 }} />}</span>
+                <span>{opt}</span>
+              </button>
+            );
+          })}
         </div>
       )}
-    </div>
+    </span>
   );
 }
 
@@ -97,7 +119,7 @@ export function DpaBadge({ status, chevron }) {
     }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: meta.accent, flexShrink: 0 }} />
       DPA: {meta.label}
-      {chevron && <Icons.Chevron size={10} style={{ opacity: 0.5 }} />}
+      {chevron && <Icons.ChevronDown size={12} style={{ opacity: 0.6 }} />}
     </span>
   );
 }
@@ -113,7 +135,7 @@ export function RespBadge({ apiValue, chevron }) {
         background: 'var(--surface)', color: 'var(--slate)', border: '1px solid var(--border)',
         flexShrink: 0, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3,
       }}>
-        Pending {chevron && <Icons.Chevron size={9} style={{ opacity: 0.5 }} />}
+        Pending {chevron && <Icons.ChevronDown size={12} style={{ opacity: 0.6 }} />}
       </span>
     );
   }
@@ -123,7 +145,7 @@ export function RespBadge({ apiValue, chevron }) {
       background: meta.bg, color: meta.text, border: `1px solid ${meta.border}`,
       flexShrink: 0, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3,
     }}>
-      {display} {chevron && <Icons.Chevron size={9} style={{ opacity: 0.5 }} />}
+      {display} {chevron && <Icons.ChevronDown size={12} style={{ opacity: 0.6 }} />}
     </span>
   );
 }

@@ -1,9 +1,11 @@
-function DPDPALogo() {
+import { Icons } from '../ui';
+
+function BrandLogo() {
   return (
     <img
-      src="/MainLogo.png"
-      alt="DPDPA"
-      style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }}
+      src="/AssurifyLogo.svg"
+      alt="Assurify"
+      style={{ height: 34, width: 'auto', objectFit: 'contain', display: 'block' }}
     />
   );
 }
@@ -43,19 +45,19 @@ function AdminPreviewCard() {
 
       {[
         {
-          bg: '#FEE2E2', icon: '🔴',
+          bg: '#FEE2E2', icon: <Icons.Alert size={15} style={{ color: '#B91C1C' }} />,
           label: 'Aadhaar — no legal basis · Blocked',
           sub: 'OBL3-C3 · Reviewer flagged',
           badge: 'Critical', badgeClass: 'badge badge-high',
         },
         {
-          bg: 'var(--risk-med-bg)', icon: '🟡',
+          bg: 'var(--risk-med-bg)', icon: <Icons.Edit size={15} style={{ color: '#92400E' }} />,
           label: 'Privacy notice — needs revision',
           sub: 'OBL1-C1 · Reviewer commented',
           badge: 'Review', badgeClass: 'badge badge-med',
         },
         {
-          bg: 'var(--green-soft)', icon: '🟢',
+          bg: 'var(--green-soft)', icon: <Icons.Check size={15} style={{ color: 'var(--green-dim)' }} />,
           label: 'Privacy policy v3 — approved',
           sub: 'OBL2-C1 · Implemented',
           badge: 'Done', badgeClass: 'badge badge-low',
@@ -71,7 +73,7 @@ function AdminPreviewCard() {
         </div>
       ))}
 
-      <div className="lp-hcard-footer">Log in to review all 30 controls →</div>
+      <div className="lp-hcard-footer">Sign in to review all 30 controls</div>
     </div>
   );
 }
@@ -83,21 +85,11 @@ export default function Landing({ onLogin }) {
       <nav className="lp-nav">
         <div className="lp-nav-inner">
           <div className="lp-logo">
-            <DPDPALogo />
+            <BrandLogo />
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'var(--slate)', background: 'var(--surface)',
-              border: '1px solid var(--border)', borderRadius: 6, padding: '4px 10px', fontWeight: 600 }}>
-              Admin Portal
-            </span>
-            <button
-              className="btn btn-primary"
-              style={{ fontSize: 14, padding: '0 22px' }}
-              onClick={onLogin}
-            >
-              Admin sign in &nbsp;→
-            </button>
-          </div>
+          <button type="button" className="btn btn-primary" onClick={onLogin}>
+            Sign in <Icons.ChevronRight size={16} />
+          </button>
         </div>
       </nav>
 
@@ -121,12 +113,8 @@ export default function Landing({ onLogin }) {
           </p>
 
           <div className="lp-cta-btns">
-            <button
-              className="btn btn-primary"
-              style={{ fontSize: 15, height: 50, padding: '0 28px' }}
-              onClick={onLogin}
-            >
-              Sign in to admin portal →
+            <button type="button" className="btn btn-primary lp-cta" onClick={onLogin}>
+              Sign in to your workspace <Icons.ChevronRight size={16} />
             </button>
           </div>
 
@@ -155,23 +143,23 @@ export default function Landing({ onLogin }) {
       <div className="lp-features">
         {[
           {
-            icon: '📁',
-            title: 'Upload Evidence',
+            icon: <Icons.Upload size={20} />,
+            title: 'Upload evidence',
             desc: 'Upload PDFs, policies, and screenshots for each control. Files are versioned and time-stamped automatically.',
           },
           {
-            icon: '💬',
-            title: 'Collaborate with Reviewers',
+            icon: <Icons.Users size={20} />,
+            title: 'Collaborate with reviewers',
             desc: 'Your CIPP/E-certified reviewer leaves inline comments on each control. Respond, revise, and resubmit — all in one thread.',
           },
           {
-            icon: '📊',
-            title: 'Track Your Score',
+            icon: <Icons.Chart size={20} />,
+            title: 'Track your score',
             desc: 'Watch your compliance score improve in real time as controls are verified and approved. No spreadsheets needed.',
           },
           {
-            icon: '📄',
-            title: 'Generate Audit Report',
+            icon: <Icons.Report size={20} />,
+            title: 'Generate an audit report',
             desc: 'Download a certified compliance report once all controls are complete — ready to share with regulators or customers.',
           },
         ].map(f => (
@@ -188,14 +176,10 @@ export default function Landing({ onLogin }) {
         <div className="lp-footer-cta-inner">
           <div>
             <h2 className="lp-footer-h2">Ready to start your compliance journey?</h2>
-            <p className="lp-footer-p">Join organisations already using Appzlogic GRC to manage DPDP, ISO 27001, SOC 2, and more.</p>
+            <p className="lp-footer-p">Join organizations already using Assurify to manage DPDP, ISO 27001, SOC 2, and more.</p>
           </div>
-          <button
-            className="btn btn-primary"
-            style={{ fontSize: 15, height: 50, padding: '0 32px', flexShrink: 0 }}
-            onClick={onLogin}
-          >
-            Sign in →
+          <button type="button" className="btn btn-primary lp-cta" onClick={onLogin}>
+            Sign in <Icons.ChevronRight size={16} />
           </button>
         </div>
       </div>

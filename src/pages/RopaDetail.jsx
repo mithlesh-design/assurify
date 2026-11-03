@@ -9,7 +9,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Icons, Button, Modal } from '../ui';
+import { Icons, Button, Modal, Badge } from '../ui';
+import { formatDate, formatDateTime, formatNumber, humanize } from '../lib/format';
 import {
   fetchRopaRecord, fetchRopaQuestions, fetchRopaResponses, updateRopaRecord, upsertRopaResponses,
 } from '../api/services/ropa';
@@ -56,30 +57,24 @@ function BoolBadge({ value, trueLabel = 'Yes', falseLabel = 'No' }) {
 }
 
 function InfoRow({ label, children }) {
+  const empty = children == null || children === '' || (Array.isArray(children) && children.every(c => c == null || c === ''));
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 12, padding: '11px 0', borderBottom: '1px solid var(--border-soft)', alignItems: 'flex-start' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', paddingTop: 2 }}>{label}</div>
-      <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5 }}>{children ?? <span style={{ color: 'var(--muted)' }}>—</span>}</div>
+    <div className="info-row">
+      <div className="info-row-label">{label}</div>
+      <div className="info-row-value">{empty ? <span className="dt-muted">Not provided</span> : children}</div>
     </div>
   );
 }
 
 function SectionCard({ title, onEdit, children }) {
   return (
-    <div style={{
-      background: 'var(--white)', border: '1px solid var(--border)',
-      borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--border-soft)', background: 'var(--surface)' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{title}</div>
-        {onEdit && (
-          <Button size="sm" icon={<Icons.Edit size={13} />} onClick={onEdit} style={{ fontSize: 12 }}>Edit</Button>
-        )}
-      </div>
-      <div style={{ padding: '4px 20px 8px' }}>
-        {children}
-      </div>
-    </div>
+    <section className="section-card">
+      <header className="section-card-head">
+        <h3>{title}</h3>
+        {onEdit && <Button size="sm" icon={<Icons.Edit size={14} />} onClick={onEdit} aria-label={`Edit ${title}`}>Edit</Button>}
+      </header>
+      <div className="section-card-body">{children}</div>
+    </section>
   );
 }
 
@@ -104,7 +99,7 @@ function QuestionInfoRows({ questions, sections, values }) {
     let content = answer === '' ? null : answer;
     if (typeof answer === 'boolean') content = <BoolBadge value={answer} />;
     else if (Array.isArray(answer)) content = <TagList items={answer} />;
-    else if (typeof answer === 'string') content = answer.replaceAll('_', ' ');
+    else if (typeof answer === 'string') content = /^[A-Za-z]+(_[A-Za-z]+)+$/.test(answer) ? humanize(answer) : answer;
     return <InfoRow key={question.id ?? question.field_name} label={question.display_text}>{content}</InfoRow>;
   });
 }
@@ -180,13 +175,13 @@ function Sel({ name, value, onChange, options, placeholder }) {
 
 const TABS = [
   { id: 'overview',   label: 'Overview' },
-  { id: 'legal',      label: 'Legal Basis' },
-  { id: 'data',       label: 'Data & Collection' },
-  { id: 'storage',    label: 'Storage & Retention' },
-  { id: 'vendors',    label: 'Third Parties' },
+  { id: 'legal',      label: 'Legal basis' },
+  { id: 'data',       label: 'Data & collection' },
+  { id: 'storage',    label: 'Storage & retention' },
+  { id: 'vendors',    label: 'Third parties' },
   { id: 'security',   label: 'Security' },
   { id: 'dpia',       label: 'DPIA' },
-  { id: 'rights',     label: 'Rights & Audit' },
+  { id: 'rights',     label: 'Rights & audit' },
 ];
 
 const EDIT_TITLES = {
@@ -295,21 +290,12 @@ function RopaDetail({ recordId, onBack, onAction }) {
     <div className="page">
 
       {/* ── Back button ─────────────────────────────────── */}
-      <button
-        onClick={onBack}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', marginBottom: 20, padding: 0 }}
-      >
-        <Icons.ChevronLeft size={16} />
+      <Button variant="ghost" size="sm" className="back-link" icon={<Icons.ChevronLeft size={16} />} onClick={onBack}>
         Back to RoPA register
-      </button>
+      </Button>
 
       {/* ── Record header card ───────────────────────────── */}
-      <div style={{
-        background: 'var(--black)', borderRadius: 'var(--r-lg)',
-        padding: '22px 26px', marginBottom: 24,
-        display: 'flex', alignItems: 'center', gap: 20,
-        boxShadow: 'var(--shadow-md)',
-      }}>
+      <div className="record-hero">
         {/* ID badge */}
         <div style={{
           background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)',
@@ -323,48 +309,36 @@ function RopaDetail({ recordId, onBack, onAction }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 19, fontWeight: 800, color: '#fff', marginBottom: 6, lineHeight: 1.2 }}>{record.processing_activity}</div>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)' }}>{record.department}</span>
-            <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
-            <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)' }}>{record.process_owner}</span>
-            <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
-            <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)' }}>Updated {record.last_updated}</span>
+            <span className="record-hero-meta">{record.department}</span>
+            <span className="record-hero-sep" aria-hidden="true">·</span>
+            <span className="record-hero-meta">{record.process_owner}</span>
+            {record.last_updated && <>
+              <span className="record-hero-sep" aria-hidden="true">·</span>
+              <span className="record-hero-meta">Updated {formatDateTime(record.last_updated)}</span>
+            </>}
           </div>
         </div>
 
         {/* Status + Sensitivity badges */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
-          <Button
-            size="sm"
-            icon={<Icons.Edit size={13} />}
-            onClick={() => openEdit('admin')}
-            style={{ color: '#fff', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)' }}
-          >
-            Edit Process
+        <div className="record-hero-side">
+          <Button size="sm" className="btn-on-dark" icon={<Icons.Edit size={14} />} onClick={() => openEdit('admin')}>
+            Edit process
           </Button>
-          <Pill value={record.status} meta={STATUS_META} />
-          <span style={{
-            fontSize: 12, fontWeight: 700, padding: '3px 10px',
-            borderRadius: 'var(--r-pill)', whiteSpace: 'nowrap',
-            background: `${sensMeta.dot}22`, color: sensMeta.text,
-            border: `1px solid ${sensMeta.dot}44`,
-          }}>
-            {sensMeta.label} sensitivity
-          </span>
+          <div className="record-hero-badges">
+            <Pill value={record.status} meta={STATUS_META} />
+            <Badge tone={{ high: 'danger', medium: 'warning', low: 'success' }[String(record.sensitivity_level ?? '').toLowerCase()] ?? 'warning'} dot>
+              {sensMeta.label} sensitivity
+            </Badge>
+          </div>
         </div>
       </div>
 
       {/* ── Tab bar ─────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 22, borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
+      <div className="tabs page-tabs" role="tablist" aria-label="Record sections">
         {TABS.map(t => (
-          <button key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{
-              padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-              background: 'transparent', border: 'none', fontFamily: 'inherit',
-              color: tab === t.id ? 'var(--green-dim)' : 'var(--muted)',
-              borderBottom: `2.5px solid ${tab === t.id ? 'var(--green)' : 'transparent'}`,
-              marginBottom: -1, transition: 'color .14s, border-color .14s',
-            }}>
+          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id}
+            className={`tab${tab === t.id ? ' active' : ''}`}
+            onClick={() => setTab(t.id)}>
             {t.label}
           </button>
         ))}
@@ -377,24 +351,24 @@ function RopaDetail({ recordId, onBack, onAction }) {
       {/* ── Overview ── */}
       {tab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <SectionCard title="Record Administration">
-            <InfoRow label="Processing Activity">{record.processing_activity}</InfoRow>
-            <InfoRow label="Process Description">{record.process_description}</InfoRow>
+          <SectionCard title="Record administration">
+            <InfoRow label="Processing activity">{record.processing_activity}</InfoRow>
+            <InfoRow label="Process description">{record.process_description}</InfoRow>
             <InfoRow label="Department">{record.department}</InfoRow>
-            <InfoRow label="Process Owner">{record.process_owner}</InfoRow>
-            <InfoRow label="Reviewed By">{record.reviewed_by}</InfoRow>
-            <InfoRow label="Next Review">{record.next_review}</InfoRow>
+            <InfoRow label="Process owner">{record.process_owner}</InfoRow>
+            <InfoRow label="Reviewed by">{record.reviewed_by}</InfoRow>
+            <InfoRow label="Next review">{record.next_review ? formatDate(record.next_review) : null}</InfoRow>
             <InfoRow label="Status"><Pill value={record.status} meta={STATUS_META} /></InfoRow>
           </SectionCard>
 
-          <SectionCard title="Quick Summary">
+          <SectionCard title="Quick summary">
             <InfoRow label="Purpose">{record.purpose}</InfoRow>
-            <InfoRow label="Data Principals">{record.data_principals} <span style={{ color: 'var(--muted)', fontSize: 12 }}>({record.volume} individuals)</span></InfoRow>
-            <InfoRow label="Legal Basis (DPDPA)">{record.legal_basis_dpdpa}</InfoRow>
+            <InfoRow label="Data Principals">{record.data_principals}{record.volume != null && record.volume !== '' && <span className="dt-muted"> ({formatNumber(record.volume)} individuals)</span>}</InfoRow>
+            <InfoRow label="Legal basis (DPDPA)">{record.legal_basis_dpdpa ? humanize(record.legal_basis_dpdpa) : null}</InfoRow>
             <InfoRow label="Sensitivity"><Pill value={String(record.sensitivity_level ?? '').toLowerCase()} meta={SENSITIVITY_META} /></InfoRow>
-            <InfoRow label="DPA in Place">{record.dpa_in_place ? <Pill value={record.dpa_in_place} meta={DPA_STATUS_META} /> : null}</InfoRow>
-            <InfoRow label="DPIA Required">{typeof record.dpia_required === 'boolean' ? <BoolBadge value={record.dpia_required} /> : null}</InfoRow>
-            <InfoRow label="Cross-Border Transfer">{record.cross_border_transfer}</InfoRow>
+            <InfoRow label="DPA in place">{record.dpa_in_place ? <Pill value={record.dpa_in_place} meta={DPA_STATUS_META} /> : null}</InfoRow>
+            <InfoRow label="DPIA required">{typeof record.dpia_required === 'boolean' ? <BoolBadge value={record.dpia_required} /> : null}</InfoRow>
+            <InfoRow label="Cross-border transfer">{typeof record.cross_border_transfer === 'boolean' ? <BoolBadge value={record.cross_border_transfer} /> : record.cross_border_transfer}</InfoRow>
           </SectionCard>
         </div>
       )}
@@ -526,7 +500,7 @@ function RopaDetail({ recordId, onBack, onAction }) {
 
       {/* Admin edit */}
       {editModal === 'admin' && (
-        <EditModal title="Edit Process Details" onClose={() => setEditModal(null)} onSave={handleSave} saving={saving} error={saveError}>
+        <EditModal title="Edit process details" onClose={() => setEditModal(null)} onSave={handleSave} saving={saving} error={saveError}>
           <FW><FL required>Processing Activity Name</FL><input className="input" name="processing_activity" value={draft.processing_activity ?? ''} onChange={set} /></FW>
           <FR>
             <FW><FL>Department</FL><input className="input" name="department" value={draft.department ?? ''} onChange={set} /></FW>

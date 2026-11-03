@@ -103,7 +103,7 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={api}>
       {children}
       {toasts.length > 0 && (
-        <div className="tz-container" aria-label="Notifications">
+        <div className="tz-container" aria-label="Notifications" role="status" aria-live="polite">
           {toasts.map(t => (
             <ToastItem key={t.id} {...t} onRemove={remove} />
           ))}

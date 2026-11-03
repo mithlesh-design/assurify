@@ -41,7 +41,17 @@ function parseResponse(r) {
    Returns questions + each question's saved user responses.
    q.answer  = available options (all choices)
    q.response = user's selected answers (what we want to display) */
+const DEMO_QUESTIONNAIRE = [
+  { id: 'q1', question: 'Which types of personal data does your organization collect?', response: ['Contact details', 'Account credentials', 'Payment information'], category: 'Data collection' },
+  { id: 'q2', question: 'Do you process personal data of children (under 18)?', response: ['No'], category: 'Data collection' },
+  { id: 'q3', question: 'Where is personal data stored?', response: ['India', 'United States (cloud provider)'], category: 'Storage & transfers' },
+  { id: 'q4', question: 'Do you share personal data with third-party processors?', response: ['Yes — payment, hosting and support vendors'], category: 'Storage & transfers' },
+  { id: 'q5', question: 'Have you appointed a Data Protection Officer or grievance officer?', response: ['Grievance officer appointed'], category: 'Governance' },
+  { id: 'q6', question: 'Do you have a documented breach response procedure?', response: [], category: 'Governance' },
+];
+
 export async function fetchQuestionnaire(tenantName) {
+  if (MOCK_ENABLED) return DEMO_QUESTIONNAIRE.map(q => ({ ...q, selected: q.response }));
   const params = tenantName ? { tenant_name: tenantName } : {};
   const { data } = await api.get(ENDPOINTS.TENANTS.QUESTIONNAIRE, { params });
   const raw = Array.isArray(data) ? data : (data?.results ?? data?.questions ?? data?.data ?? []);

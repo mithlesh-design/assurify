@@ -228,7 +228,9 @@ function ReviewerApp() {
   const [navOpen, setNavOpen] = useNavDrawer();
   const [actionsSlot, setActionsSlot] = useState(null);
   const [printReport, setPrintReport] = useState(false);
+  const [showSwitcher, setShowSwitcher] = useState(false);
   useScrollTopOnPageChange(page);
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [ropaRecordId]);
 
   const navigate  = (p) => { setPage(p); if (p !== 'ropa') setRopaRecordId(null); };
   const showToast = (msg) => toast.info(msg);
@@ -323,13 +325,19 @@ function ReviewerApp() {
   return (
     <div className={`app-shell ${portalClass}`}>
       <Sidebar active={page} onNavigate={navigate} onLogout={handleLogout}
-        open={navOpen} onClose={() => setNavOpen(false)} />
+        open={navOpen} onClose={() => setNavOpen(false)} onSwitchWorkspace={() => setShowSwitcher(true)} />
       <main className="main">
         <PageHeader title={PAGE_TITLES[page] ?? page} actions={headerActions}
           onMenu={() => setNavOpen(true)} actionsRef={setActionsSlot} />
         <PageActionsProvider value={actionsSlot}>{pageEl}</PageActionsProvider>
       </main>
-      {!tenant && page !== 'profile-setup' && <TenantSelectModal />}
+      {(!tenant || showSwitcher) && page !== 'profile-setup' && (
+        <TenantSelectModal
+          currentId={tenant?.id}
+          onCancel={tenant ? () => setShowSwitcher(false) : undefined}
+          onDone={(t) => { setShowSwitcher(false); if (tenant) toast.success(`Switched to ${t.name}.`); }}
+        />
+      )}
       {showProfilePrompt && (
         <ProfileIncompleteModal
           onComplete={() => { setShowProfilePrompt(false); navigate('profile-setup'); }}

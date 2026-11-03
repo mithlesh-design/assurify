@@ -68,8 +68,8 @@ function ControlAccordion({ cat, vendorId, vendorName, onSubControlSelect }) {
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)' }}>{cat.label}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-            <div style={{ width: 140 }}><Progress value={cat.pct} tone={riskTone(cat.pct)} thickness="thin" /></div>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px 8px', marginTop: 6 }}>
+            <div style={{ width: 140, maxWidth: '100%' }}><Progress value={cat.pct} tone={riskTone(cat.pct)} thickness="thin" /></div>
             <span style={{ fontSize: 12, fontWeight: 700, color: pctColor }}>{cat.pct}%</span>
             <span style={{ fontSize: 12, color: 'var(--muted)' }}>{cat.answered}/{cat.total} sub-controls</span>
           </div>

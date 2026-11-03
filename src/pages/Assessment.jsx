@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useApp }                from '../context/AppContext';
 import { GAPP_PRINCIPLE_LABELS } from '../config/obligations';
 import { OBL_META, STATUS_META, statusLabel, statusClass } from '../data/controls';
-import { Progress } from '../ui';
+import { EmptyState, ErrorState, FilterChips, LoadingState, Progress } from '../ui';
 import ControlPanel from '../components/ControlPanel';
 
 const FILTER_ORDER = ['all', ...STATUS_META.map(s => s.value)];
@@ -147,7 +147,7 @@ function AssessmentPage() {
     <div className="page">
 
       {/* ══ Summary stat tiles ════════════════════════════ */}
-      <div className="stat-grid-3" style={{ marginBottom: 24 }}>
+      <div className="tile-grid" style={{ marginBottom: 24 }}>
         <StatTile
           icon={IcoShield}
           label="Overall score"
@@ -175,75 +175,37 @@ function AssessmentPage() {
       </div>
 
       {/* ══ Filter chips ══════════════════════════════════ */}
-      <div className="assess-filter-bar">
-        {FILTER_ORDER.map(f => {
-          const label = f === 'all' ? 'All' : (STATUS_META.find(s => s.value === f)?.label ?? f);
-          const dot   = STATUS_BAR_COLOR[f];
-          return (
-            <button key={f} className={`assess-chip${filter === f ? ' active' : ''}`}
-              onClick={() => setFilter(f)}>
-              {f !== 'all' && (
-                <span style={{
-                  width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                  background: filter === f ? 'rgba(255,255,255,0.8)' : dot,
-                  display: 'inline-block',
-                }} />
-              )}
-              {label}
-              <span className="assess-chip-count">{counts[f] ?? 0}</span>
-            </button>
-          );
-        })}
+      <div style={{ marginBottom: 20 }}>
+        <FilterChips
+          label="Filter controls by status"
+          value={filter}
+          onChange={setFilter}
+          items={FILTER_ORDER.map(f => ({
+            key: f,
+            label: f === 'all' ? 'All' : (STATUS_META.find(s => s.value === f)?.label ?? f),
+            dot: f === 'all' ? null : STATUS_BAR_COLOR[f],
+            count: counts[f] ?? 0,
+          }))}
+        />
       </div>
 
       {/* ══ States ════════════════════════════════════════ */}
-      {controlsLoading && (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', padding: '64px 24px', gap: 14,
-        }}>
-          <div style={{
-            width: 44, height: 44, border: '3px solid var(--border)',
-            borderTop: '3px solid var(--green)', borderRadius: '50%',
-            animation: 'spin .8s linear infinite',
-          }} />
-          <div style={{ fontSize: 14, color: 'var(--muted)' }}>Loading controls…</div>
-        </div>
-      )}
+      {controlsLoading && <LoadingState label="Loading controls…" />}
 
       {!controlsLoading && controlsError && (
-        <div style={{
-          padding: '32px 24px', textAlign: 'center',
-          background: 'var(--risk-high-bg)', border: '1px solid var(--risk-high-border)',
-          borderRadius: 'var(--r-lg)', color: 'var(--risk-high-text)', fontSize: 14,
-        }}>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>Failed to load controls</div>
-          <div style={{ fontSize: 13, opacity: 0.8 }}>{controlsError}</div>
-        </div>
+        <ErrorState title="Couldn't load controls" message={controlsError} />
       )}
 
       {!controlsLoading && !controlsError && controls.length === 0 && (
-        <div style={{
-          padding: '48px 24px', textAlign: 'center',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-        }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%',
-            background: 'var(--surface)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <IcoShield />
-          </div>
-          <div style={{ fontSize: 14, color: 'var(--muted)' }}>
-            No controls loaded. Select a tenant workspace to begin.
-          </div>
-        </div>
+        <EmptyState
+          icon={<IcoShield />}
+          title="No controls loaded yet"
+          description="Choose a client workspace to load its assessment controls."
+        />
       )}
 
       {grouped.length === 0 && controls.length > 0 && (
-        <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 14 }}>
-          No controls match this filter.
-        </div>
+        <EmptyState compact icon={<IcoShield />} title="No controls match this filter" description="Choose another status to see more controls." />
       )}
 
       {/* ══ Controls grouped by GAPP principle ═══════════ */}
@@ -251,20 +213,14 @@ function AssessmentPage() {
         <div key={obl.id} style={{ marginBottom: 28 }}>
 
           {/* Obligation group header */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            marginBottom: 10, padding: '12px 16px',
-            background: 'var(--white)', border: '1px solid var(--border)',
-            borderRadius: 'var(--r-md)',
-            boxShadow: 'var(--shadow-sm)',
-          }}>
+          <div className="assess-group-head">
             {/* ID tag */}
             {/* <span className="assess-obl-id" style={{ flexShrink: 0 }}>
               {obl.id.replace(/_/g, '-')}
             </span> */}
 
             {/* Name */}
-            <span className="assess-obl-name" style={{ flex: 1 }}>{obl.name}</span>
+            <h2 className="assess-obl-name" style={{ flex: 1, margin: 0 }}>{obl.name}</h2>
 
             {/* Mini progress bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>

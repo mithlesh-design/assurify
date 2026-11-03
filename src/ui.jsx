@@ -439,7 +439,8 @@ const RowActions = ({ items, label = 'More actions', align = 'end' }) => {
         els[next]?.focus();
       }
     };
-    const onScroll = () => setOpen(false);
+    /* Keep the menu attached to its button while the page scrolls or resizes */
+    const onScroll = () => place();
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey, true);
     window.addEventListener('resize', onScroll);
@@ -451,7 +452,7 @@ const RowActions = ({ items, label = 'More actions', align = 'end' }) => {
       window.removeEventListener('resize', onScroll);
       window.removeEventListener('scroll', onScroll, true);
     };
-  }, [open]);
+  }, [open, place]);
 
   if (!visible.length) return null;
   return (

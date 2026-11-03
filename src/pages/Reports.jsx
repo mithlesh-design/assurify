@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Icons, Badge, Button, Progress } from '../ui';
+import { useToast } from '../context/ToastContext';
+import { formatDate, formatLongDate } from '../lib/format';
 
 const REPORTS = [
   {
@@ -15,7 +17,7 @@ const REPORTS = [
       { id: 'OBL-7', name: "Children's data (Section 9)", pct: 0 },
       { id: 'OBL-8', name: 'Grievance redressal', pct: 80 },
     ],
-    summary: 'Acme Technologies Pvt Ltd scores 34% overall compliance against the 8 DPDP Act obligations as of 22 May 2026. Score improved by 6 points since the April report — driven primarily by progress on Privacy Notice and Breach notification controls.',
+    summary: 'Acme Technologies Pvt Ltd scores 34% overall compliance against the 8 DPDP Act obligations as of May 22, 2026. Score improved by 6 points since the April report — driven primarily by progress on Privacy Notice and Breach notification controls.',
   },
   {
     id: 'r2', title: 'DPDP Readiness Assessment — April 2026',
@@ -49,26 +51,52 @@ const REPORTS = [
   },
 ];
 
-function PageReports({ onAction }) {
+function PageReports() {
+  const toast = useToast();
   const [activeId, setActiveId] = useState(REPORTS[0].id);
   const active = REPORTS.find((r) => r.id === activeId);
+
+  /* Real actions: copy a link, print / save as PDF, and draft an email to the board */
+  const shareLink = () => {
+    const url = window.location.href;
+    if (!navigator.clipboard) { toast.info(`Copy this link: ${url}`); return; }
+    navigator.clipboard.writeText(url)
+      .then(() => toast.success('Link to this report copied to your clipboard.'))
+      .catch(() => toast.error('Could not copy the link. Copy it from the address bar instead.'));
+  };
+  const downloadPdf = () => window.print();
+  const emailBoard = () => {
+    const lines = [
+      `${active.title} (${formatLongDate(active.date)})`,
+      '',
+      `Overall score: ${active.score}% (${active.score - active.prevScore >= 0 ? '+' : ''}${active.score - active.prevScore} pts since last report)`,
+      '',
+      active.summary,
+      '',
+      'Obligation status:',
+      ...active.obligations.map(o => `- ${o.name}: ${o.pct}%`),
+    ];
+    window.location.href = `mailto:?subject=${encodeURIComponent(active.title)}&body=${encodeURIComponent(lines.join('\n'))}`;
+  };
 
   const trend = active.score - active.prevScore;
   const trendColor = trend >= 0 ? 'var(--risk-low-text)' : 'var(--risk-high-text)';
 
   return (
     <div className="page">
-      <div className="two-col" style={{ alignItems: 'start', gridTemplateColumns: '1fr 2fr' }}>
-        <div>
+      <div className="reports-layout">
+        <div className="no-print">
           <div className="section-header" style={{ margin: '0 0 12px' }}>
             <h3>Reports</h3>
             <span style={{ fontSize: 12, color: 'var(--text-subtle)' }}>{REPORTS.length} total</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {REPORTS.map((r) => (
-              <div
+              <button
+                type="button"
                 key={r.id}
                 className={`report-item${r.id === activeId ? ' active' : ''}`}
+                aria-pressed={r.id === activeId}
                 onClick={() => setActiveId(r.id)}
               >
                 <div className="report-item-row">
@@ -76,21 +104,21 @@ function PageReports({ onAction }) {
                   <div className="report-item-title">{r.title}</div>
                 </div>
                 <div className="report-item-meta">
-                  <span style={{ fontFamily: 'var(--font-mono)' }}>{r.date}</span>
+                  <span>{formatDate(r.date)}</span>
                   <span className="report-item-score" style={{
                     color: r.score < 40 ? 'var(--risk-high-text)'
                       : r.score < 70 ? 'var(--risk-med-text)'
                       : 'var(--risk-low-text)',
                   }}>{r.score}%</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="card">
+        <div className="card report-print-area">
           <div style={{ padding: '24px 28px 18px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
+            <div className="report-head">
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
                   <Badge tone={active.status === 'Current' ? 'info' : 'neutral'}>{active.status}</Badge>
@@ -109,7 +137,7 @@ function PageReports({ onAction }) {
                   <span className="dot-sep" style={{ width: 3, height: 3, background: 'var(--text-dim)', borderRadius: '50%' }} />
                   <span>Prepared by Rajesh Kumar</span>
                   <span className="dot-sep" style={{ width: 3, height: 3, background: 'var(--text-dim)', borderRadius: '50%' }} />
-                  <span style={{ fontFamily: 'var(--font-mono)' }}>{active.date}</span>
+                  <span>{formatLongDate(active.date)}</span>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -163,17 +191,13 @@ function PageReports({ onAction }) {
             </div>
           </div>
 
-          <div style={{
-            padding: '16px 28px', borderTop: '1px solid var(--border)',
-            display: 'flex', gap: 10, justifyContent: 'flex-end',
-            background: 'oklch(98.8% 0.003 240)',
-          }}>
-            <Button icon={<Icons.Share size={14} />} onClick={() => onAction('Share link copied')}>Share</Button>
-            <Button icon={<Icons.Download size={14} />} onClick={() => onAction('Report downloaded')}>
-              Download PDF
+          <div className="report-actions no-print">
+            <Button icon={<Icons.Link size={15} />} onClick={shareLink}>Copy link</Button>
+            <Button icon={<Icons.Printer size={15} />} onClick={downloadPdf} title="Opens your browser's print dialog — choose Save as PDF">
+              Print / save PDF
             </Button>
-            <Button variant="primary" icon={<Icons.Send size={14} />} onClick={() => onAction('Sent to board members')}>
-              Send to board
+            <Button variant="primary" icon={<Icons.Mail size={15} />} onClick={emailBoard} title="Opens an email draft with this report's summary">
+              Email to board
             </Button>
           </div>
         </div>
