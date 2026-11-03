@@ -68,7 +68,7 @@ function Dropzone({ files, onChange }) {
           marginBottom: files.length ? 12 : 0,
         }}
       >
-        <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.5 }}>📎</div>
+        <div style={{ marginBottom: 8, color: "var(--green-dim)" }}><Icons.Upload size={26} /></div>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
           Click to upload or drag files here
         </div>

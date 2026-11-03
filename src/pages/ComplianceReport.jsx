@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Icons } from '../ui';
 import { useApp } from '../context/AppContext';
 import { OBL_META, statusLabel } from '../data/controls';
 import { GAPP_PRINCIPLE_LABELS } from '../config/obligations';
@@ -145,23 +146,16 @@ export default function ComplianceReport({ onNavigate, autoPrint = false, onPrin
       <nav className="lp-nav cr-nav-print" style={{
         background: '#fff', borderBottom: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)',
       }}>
-        <div className="lp-nav-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
-            onClick={() => onNavigate('dashboard')}>
-            <img src="/MainLogo.png" alt="DPDPA" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button className="btn btn-secondary" onClick={() => onNavigate('assessment')}>
-              ← Assessment
+        <div className="lp-nav-inner cr-nav-inner">
+          <button type="button" className="cr-nav-logo" onClick={() => onNavigate('dashboard')} aria-label="Go to dashboard">
+            <img src="/AssurifyLogo.svg" alt="Assurify" />
+          </button>
+          <div className="cr-nav-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => onNavigate('assessment')}>
+              <Icons.ChevronLeft size={16} /> Back to assessment
             </button>
-            <button className="btn btn-primary" onClick={() => window.print()}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <polyline points="6 9 6 2 18 2 18 9" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <rect x="6" y="14" width="12" height="8" />
-              </svg>
-              Print / Save PDF
+            <button type="button" className="btn btn-primary" onClick={() => window.print()}>
+              <Icons.Printer size={15} /> Print / save PDF
             </button>
           </div>
         </div>

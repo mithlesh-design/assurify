@@ -491,7 +491,7 @@ export default function VendorControlPanel({ subControl, onClose }) {
                 </div>
               ) : (
                 <div className="cp-docs-empty">
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>📋</div>
+                  <div style={{ marginBottom: 8, color: "var(--slate)" }}><Icons.Clipboard size={26} /></div>
                   <div>No observations or recommendations yet.</div>
                   {isAdmin && (
                     <button className="btn btn-primary btn-sm" style={{ marginTop: 12 }} onClick={startObsEdit}>
