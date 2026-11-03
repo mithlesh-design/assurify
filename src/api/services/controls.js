@@ -11,6 +11,9 @@
 import api from '../config';
 import { ENDPOINTS } from '../endpoints';
 
+/* Mock mode (VITE_ENABLE_MOCK_AUTH) — control reviews are applied locally by AppContext only. */
+const MOCK_ENABLED = import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true';
+
 const url = (tenantUrl, endpoint) =>
   tenantUrl ? `${tenantUrl}${endpoint}` : endpoint;
 
@@ -39,6 +42,7 @@ const STATUS_API_LABEL = {
 
 /* PATCH /v1/control-framework/tenant-service/{control_id}/review */
 export async function reviewControl(controlId, controlStatus, tenantUrl) {
+  if (MOCK_ENABLED) return { control_id: controlId, control_status: controlStatus };
   const endpoint = ENDPOINTS.CONTROLS.REVIEW(controlId);
   const { data } = await api.patch(
     tenantUrl ? `${tenantUrl}${endpoint}` : endpoint,
@@ -49,6 +53,7 @@ export async function reviewControl(controlId, controlStatus, tenantUrl) {
 
 /* PATCH /v1/control-framework/tenant-service/{control_id}/review — observation & recommendation only */
 export async function saveObservationRecommendation(controlId, remarks, recommendation, tenantUrl) {
+  if (MOCK_ENABLED) return { control_id: controlId, remarks, recommendation };
   const endpoint = ENDPOINTS.CONTROLS.REVIEW(controlId);
   const { data } = await api.patch(
     tenantUrl ? `${tenantUrl}${endpoint}` : endpoint,

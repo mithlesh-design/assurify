@@ -8,6 +8,10 @@
 import api, { tenantApi, tokenStore } from '../config';
 import { ENDPOINTS }        from '../endpoints';
 import { getUserFromToken }  from '../../lib/jwt';
+import { createDemoUsers }   from '../../data/meetEvidence';
+
+/* Mock mode (VITE_ENABLE_MOCK_AUTH) — sample users so the admin portal can be previewed. */
+const MOCK_ENABLED = import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true';
 
 /* ── Login ──────────────────────────────────────────────
    POST /auth/login/?mfa=false
@@ -59,7 +63,7 @@ export async function registerUser({ email, username, role, password }) {
    Returns all users excluding admins.
 ─────────────────────────────────────────────────────── */
 export async function fetchUsers() {
-  const { data } = await api.get(ENDPOINTS.AUTH.USERS);
+  const data = MOCK_ENABLED ? createDemoUsers() : (await api.get(ENDPOINTS.AUTH.USERS)).data;
   const raw = Array.isArray(data) ? data : (data?.results ?? data?.users ?? []);
   return raw
     .filter(u => (u.role ?? '').toLowerCase() !== 'admin')
