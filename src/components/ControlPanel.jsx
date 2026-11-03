@@ -103,7 +103,7 @@ function DocStatusBadge({ status }) {
   };
   const labels = { approved: '✓ Approved', needs_revision: 'Needs revision', under_review: 'Under review' };
   return (
-    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4, display: 'inline-block', ...(styles[status] ?? styles.under_review) }}>
+    <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 4, display: 'inline-block', ...(styles[status] ?? styles.under_review) }}>
       {labels[status] ?? 'Under review'}
     </span>
   );
@@ -415,7 +415,7 @@ export default function ControlPanel({ ctrl, onClose, staticMode = false, onStat
                   </span>
                   {!statusUpdating && (
                     <span style={{
-                      fontSize: 10, color: 'var(--slate)',
+                      fontSize: 12, color: 'var(--slate)',
                       transform: statusDropOpen ? 'rotate(180deg)' : 'none',
                       transition: 'transform .15s', display: 'inline-block',
                     }}>▾</span>
@@ -445,7 +445,7 @@ export default function ControlPanel({ ctrl, onClose, staticMode = false, onStat
                         onMouseEnter={e => { if (ctrl.status !== s.value) e.currentTarget.style.background = 'var(--bg)'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = ctrl.status === s.value ? 'var(--green-soft)' : 'transparent'; }}
                       >
-                        {ctrl.status === s.value && <span style={{ fontSize: 10, color: 'var(--green)' }}>✓</span>}
+                        {ctrl.status === s.value && <span style={{ fontSize: 12, color: 'var(--green)' }}>✓</span>}
                         {s.label}
                       </button>
                     ))}

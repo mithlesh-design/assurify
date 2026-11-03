@@ -35,7 +35,7 @@ function VendorScoreRing({ pct, size = 92, stroke = 9 }) {
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ fontSize: 19, fontWeight: 800, color: riskTextColor(safePct) }}>{Math.round(safePct)}%</span>
-        <span style={{ fontSize: 9.5, fontWeight: 600, color: 'var(--muted)' }}>score</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}>score</span>
       </div>
     </div>
   );
@@ -71,7 +71,7 @@ function ControlAccordion({ cat, vendorId, vendorName, onSubControlSelect }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
             <div style={{ width: 140 }}><Progress value={cat.pct} tone={riskTone(cat.pct)} thickness="thin" /></div>
             <span style={{ fontSize: 12, fontWeight: 700, color: pctColor }}>{cat.pct}%</span>
-            <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>{cat.answered}/{cat.total} sub-controls</span>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>{cat.answered}/{cat.total} sub-controls</span>
           </div>
         </div>
         <div style={{ width: 28, height: 28, borderRadius: 7, background: open ? 'var(--green-soft)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .12s' }}>
@@ -197,7 +197,7 @@ function VendorDetail({ vendor, onBack, onAction }) {
             <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{vendor.email}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
               <span style={{
-                fontSize: 11.5, fontWeight: 600, padding: '4px 11px', borderRadius: 'var(--r-pill)',
+                fontSize: 12, fontWeight: 600, padding: '4px 11px', borderRadius: 'var(--r-pill)',
                 background: catCol.bg, color: catCol.text, border: `1px solid ${catCol.border}`,
               }}>
                 {vendor.category}
@@ -217,7 +217,7 @@ function VendorDetail({ vendor, onBack, onAction }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <VendorScoreRing pct={overallPct} />
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Overall progress</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Overall progress</div>
               <div style={{ fontSize: 13, color: 'var(--slate)', marginTop: 4 }}>{overallAnswered} of {overallTotal} sub-controls answered</div>
             </div>
           </div>

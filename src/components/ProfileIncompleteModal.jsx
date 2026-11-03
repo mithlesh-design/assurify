@@ -57,7 +57,7 @@ export default function ProfileIncompleteModal({ onComplete, onDismiss }) {
                 width: 22, height: 22, borderRadius: '50%',
                 background: 'var(--green)', color: 'white',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 700, flexShrink: 0,
+                fontSize: 12, fontWeight: 700, flexShrink: 0,
               }}>{s.n}</div>
               <span style={{ fontSize: 13, color: 'var(--ink)' }}>{s.label}</span>
             </div>

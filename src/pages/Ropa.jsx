@@ -32,7 +32,7 @@ function StatusBadge({ status }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 11.5, fontWeight: 600, padding: '3px 9px',
+      fontSize: 12, fontWeight: 600, padding: '3px 9px',
       borderRadius: 'var(--r-pill)',
       background: m.bg, color: m.text, border: `1px solid ${m.border}`,
       whiteSpace: 'nowrap',
@@ -49,7 +49,7 @@ function SensitivityBadge({ level }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 11, fontWeight: 700, padding: '3px 8px',
+      fontSize: 12, fontWeight: 700, padding: '3px 8px',
       borderRadius: 'var(--r-pill)',
       background: m.bg, color: m.text, border: `1px solid ${m.border}`,
       textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
@@ -65,7 +65,7 @@ function DpaBadge({ status }) {
   const m = DPA_STATUS_META[status] ?? DPA_STATUS_META.pending;
   return (
     <span style={{
-      fontSize: 11.5, fontWeight: 600, padding: '3px 9px',
+      fontSize: 12, fontWeight: 600, padding: '3px 9px',
       borderRadius: 'var(--r-pill)',
       background: m.bg, color: m.text, border: `1px solid ${m.border}`,
       whiteSpace: 'nowrap',
@@ -88,9 +88,9 @@ function StatTile({ label, value, sub, accent, icon: Icon }) {
       <div style={{ width: 30, height: 30, borderRadius: 7, background: `${accent}18`, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
         <Icon />
       </div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', lineHeight: 1, marginBottom: 3 }}>{value}</div>
-      <div style={{ fontSize: 11.5, color: 'var(--slate)' }}>{sub}</div>
+      <div style={{ fontSize: 12, color: 'var(--slate)' }}>{sub}</div>
     </div>
   );
 }
@@ -153,7 +153,7 @@ function RecordRow({ record, onSelect }) {
         {/* Data Principals + Volume */}
         <div style={{ paddingRight: 16 }}>
           <div style={{ fontSize: 12.5, color: 'var(--ink)', fontWeight: 600 }}>{record.data_principals || '—'}</div>
-          {record.volume != null && record.volume !== '' && <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 1 }}>{record.volume} individuals</div>}
+          {record.volume != null && record.volume !== '' && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{record.volume} individuals</div>}
         </div>
 
         {/* DPA */}
@@ -228,9 +228,9 @@ function DashboardTab({ stats }) {
             background: 'var(--white)', border: '1px solid var(--border)', borderLeft: `3px solid ${tile.accent}`,
             borderRadius: 'var(--r-lg)', padding: '16px 18px', boxShadow: 'var(--shadow-sm)',
           }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{tile.label}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{tile.label}</div>
             <div style={{ fontSize: 30, fontWeight: 900, color: 'var(--ink)', lineHeight: 1, marginBottom: 4 }}>{tile.value}</div>
-            <div style={{ fontSize: 11.5, color: 'var(--slate)' }}>{tile.sub}</div>
+            <div style={{ fontSize: 12, color: 'var(--slate)' }}>{tile.sub}</div>
           </div>
         ))}
       </div>
@@ -246,11 +246,11 @@ function DashboardTab({ stats }) {
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 22, fontWeight: 900, color: knownChecks === totalChecks && passCount === totalChecks ? 'var(--green-dim)' : '#B45309' }}>{passCount}/{totalChecks}</div>
-              <div style={{ fontSize: 10.5, color: 'var(--muted)', fontWeight: 600 }}>passed</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>passed</div>
             </div>
           </div>
           {knownChecks < totalChecks && (
-            <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
               Checklist status is not fully provided by the dashboard API.
             </div>
           )}
@@ -353,7 +353,7 @@ const ADD_STEP_SECTIONS = [
 
 function FieldLabel({ children, required }) {
   return (
-    <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
+    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
       {children}{required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
     </label>
   );
@@ -399,7 +399,7 @@ function MultiSelect({ options, selected, onChange, label }) {
           <button key={val} type="button"
             onClick={() => toggle(val)}
             style={{
-              fontSize: 11.5, padding: '4px 10px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontWeight: active ? 700 : 500,
+              fontSize: 12, padding: '4px 10px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontWeight: active ? 700 : 500,
               background: active ? 'var(--green-soft)' : 'var(--surface)',
               color: active ? 'var(--green-dim)' : 'var(--slate)',
               border: `1.5px solid ${active ? 'var(--green-mid)' : 'var(--border)'}`,
@@ -723,14 +723,14 @@ function AddActivityModal({ onClose, onSaved }) {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                   <div style={{
                     width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11.5, fontWeight: 800,
+                    fontSize: 12, fontWeight: 800,
                     background: i < step ? 'var(--green)' : i === step ? 'var(--green)' : 'var(--border)',
                     color: i <= step ? '#fff' : 'var(--muted)',
                     transition: 'background .2s',
                   }}>
                     {i < step ? <Icons.Check size={13} /> : i + 1}
                   </div>
-                  <div style={{ fontSize: 10, fontWeight: i === step ? 700 : 500, color: i === step ? 'var(--green-dim)' : 'var(--muted)', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, fontWeight: i === step ? 700 : 500, color: i === step ? 'var(--green-dim)' : 'var(--muted)', whiteSpace: 'nowrap', textAlign: 'center' }}>
                     {s.label}
                   </div>
                 </div>
@@ -959,7 +959,7 @@ function PageRopa({ onAction, onSelectRecord, onSummary }) {
                 {/* Column header */}
                 <div style={{ display: 'grid', gridTemplateColumns: ROW_GRID, alignItems: 'center', gap: 0, padding: '4px 18px 10px', borderBottom: '1px solid var(--border-soft)' }}>
                   {['RoPA ID', 'Processing Activity', 'Sensitivity', 'Legal Basis', 'Data Principals', 'DPA', 'Status', ''].map((col, i) => (
-                    <div key={i} style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{col}</div>
+                    <div key={i} style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{col}</div>
                   ))}
                 </div>
                 {filtered.map(r => (

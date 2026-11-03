@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { OBL_META, statusLabel } from '../data/controls';
 import { GAPP_PRINCIPLE_LABELS } from '../config/obligations';
@@ -34,7 +35,7 @@ function StatusInline({ status }) {
   const s = STATUS_STYLE[status] ?? STATUS_STYLE.pending_review;
   return (
     <span style={{
-      fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+      fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
       display: 'inline-block',
       background: s.bg, color: s.color, border: `1px solid ${s.border}`,
     }}>
@@ -50,7 +51,7 @@ function MiniBar({ pct }) {
       <div style={{ flex: 1, height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden', minWidth: 60 }}>
         <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.6s' }} />
       </div>
-      <span style={{ fontSize: 11, fontWeight: 700, color, minWidth: 30, textAlign: 'right' }}>{pct}%</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color, minWidth: 30, textAlign: 'right' }}>{pct}%</span>
     </div>
   );
 }
@@ -77,8 +78,15 @@ function ScoreRing({ score, color }) {
   );
 }
 
-export default function ComplianceReport({ onNavigate }) {
+export default function ComplianceReport({ onNavigate, autoPrint = false, onPrinted }) {
   const { controls, complianceScore, user, tenant, controlsLoading } = useApp();
+
+  /* "Export PDF" from the assessment opens this report and the browser's Save as PDF dialog */
+  useEffect(() => {
+    if (!autoPrint || controlsLoading) return undefined;
+    const t = setTimeout(() => { window.print(); onPrinted?.(); }, 450);
+    return () => clearTimeout(t);
+  }, [autoPrint, controlsLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const score   = complianceScore();
   const impl    = controls.filter(c => c.status === 'implemented').length;
@@ -179,8 +187,8 @@ export default function ComplianceReport({ onNavigate }) {
                     alignItems: 'center', justifyContent: 'center',
                   }}>
                     <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{score}%</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 6 }}>Compliance Score</div>
-                    <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{impl} of {controls.length} controls</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 6 }}>Compliance Score</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{impl} of {controls.length} controls</div>
                   </div>
                 </div>
               </div>
@@ -269,7 +277,7 @@ export default function ComplianceReport({ onNavigate }) {
                 <tbody>
                   {oblRows.map(o => (
                     <tr key={o.id}>
-                      <td style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--slate)', whiteSpace: 'nowrap' }}>{o.ref}</td>
+                      <td style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--slate)', whiteSpace: 'nowrap' }}>{o.ref}</td>
                       <td style={{ fontWeight: 500 }}>{o.name}</td>
                       <td style={{ textAlign: 'center', fontWeight: 700 }}>{o.pct}%</td>
                       <td style={{ minWidth: 120 }}><MiniBar pct={o.pct} /></td>
@@ -340,7 +348,7 @@ export default function ComplianceReport({ onNavigate }) {
                 <tbody>
                   {oblRows.map(o => (
                     <tr key={o.id}>
-                      <td style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--slate)', whiteSpace: 'nowrap' }}>{o.ref}</td>
+                      <td style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--slate)', whiteSpace: 'nowrap' }}>{o.ref}</td>
                       <td style={{ fontWeight: 500 }}>{o.name}</td>
                       <td style={{ textAlign: 'center', fontWeight: 700, color: o.pct >= 80 ? 'var(--green-dim)' : o.pct >= 50 ? '#B45309' : '#DC2626' }}>{o.pct}%</td>
                       <td style={{ textAlign: 'center', color: 'var(--slate)' }}>{o.oi}</td>
@@ -421,7 +429,7 @@ export default function ComplianceReport({ onNavigate }) {
                   <tbody>
                     {gapControls.map(c => (
                       <tr key={c.id}>
-                        <td style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--slate)', whiteSpace: 'nowrap' }}>{c.oblId}</td>
+                        <td style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--slate)', whiteSpace: 'nowrap' }}>{c.oblId}</td>
                         <td style={{ fontSize: 13 }}>{c.name}</td>
                         <td style={{ fontSize: 12.5, color: 'var(--slate)' }}>{resolveOblName(c.obl)}</td>
                         <td style={{ textAlign: 'center' }}><StatusInline status={c.status} /></td>
@@ -457,7 +465,7 @@ export default function ComplianceReport({ onNavigate }) {
                       ))}
                     </ul>
                     {block.items.length > ROADMAP_CAP && (
-                      <div style={{ fontSize: 11.5, color: 'var(--muted)', padding: '8px 16px', borderTop: '1px solid var(--border-soft)' }}>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', padding: '8px 16px', borderTop: '1px solid var(--border-soft)' }}>
                         + {block.items.length - ROADMAP_CAP} more — see Gap Summary above.
                       </div>
                     )}
@@ -525,7 +533,7 @@ export default function ComplianceReport({ onNavigate }) {
                 </div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                   <div style={{
-                    fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase',
+                    fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase',
                     letterSpacing: '0.05em', marginBottom: 2,
                   }}>
                     Authorised for Appzlogic GRC

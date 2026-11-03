@@ -31,7 +31,7 @@ function Pill({ value, meta }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 11.5, fontWeight: 600, padding: '3px 10px',
+      fontSize: 12, fontWeight: 600, padding: '3px 10px',
       borderRadius: 'var(--r-pill)',
       background: m.bg, color: m.text, border: `1px solid ${m.border}`,
     }}>
@@ -45,7 +45,7 @@ function BoolBadge({ value, trueLabel = 'Yes', falseLabel = 'No' }) {
   const on = !!value;
   return (
     <span style={{
-      fontSize: 11.5, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-pill)',
+      fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-pill)',
       background: on ? '#ECFDF5' : '#F1F5F9',
       color:      on ? '#065F46' : '#475569',
       border:     `1px solid ${on ? '#A7F3D0' : '#CBD5E1'}`,
@@ -58,7 +58,7 @@ function BoolBadge({ value, trueLabel = 'Yes', falseLabel = 'No' }) {
 function InfoRow({ label, children }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 12, padding: '11px 0', borderBottom: '1px solid var(--border-soft)', alignItems: 'flex-start' }}>
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', paddingTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', paddingTop: 2 }}>{label}</div>
       <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5 }}>{children ?? <span style={{ color: 'var(--muted)' }}>—</span>}</div>
     </div>
   );
@@ -156,7 +156,7 @@ function EditModal({ title, onClose, onSave, saving, error, children }) {
 
 function FL({ children, required }) {
   return (
-    <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
+    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
       {children}{required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
     </label>
   );
@@ -315,7 +315,7 @@ function RopaDetail({ recordId, onBack, onAction }) {
           background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)',
           borderRadius: 'var(--r-md)', padding: '10px 16px', textAlign: 'center', flexShrink: 0,
         }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>RoPA ID</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>RoPA ID</div>
           <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', fontFamily: 'var(--font-mono)' }}>{record.ropa_id}</div>
         </div>
 
@@ -343,7 +343,7 @@ function RopaDetail({ recordId, onBack, onAction }) {
           </Button>
           <Pill value={record.status} meta={STATUS_META} />
           <span style={{
-            fontSize: 11.5, fontWeight: 700, padding: '3px 10px',
+            fontSize: 12, fontWeight: 700, padding: '3px 10px',
             borderRadius: 'var(--r-pill)', whiteSpace: 'nowrap',
             background: `${sensMeta.dot}22`, color: sensMeta.text,
             border: `1px solid ${sensMeta.dot}44`,
@@ -416,7 +416,7 @@ function RopaDetail({ recordId, onBack, onAction }) {
                 <thead>
                   <tr style={{ background: 'var(--surface)' }}>
                     {['DPDPA Basis', 'DPDPA Section', 'GDPR Equivalent', 'GDPR Article'].map(h => (
-                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -427,9 +427,9 @@ function RopaDetail({ recordId, onBack, onAction }) {
                     return (
                       <tr key={b.value} style={{ background: isMatch ? 'var(--green-soft)' : i % 2 === 0 ? '#fff' : 'var(--surface)' }}>
                         <td style={{ padding: '10px 16px', fontWeight: isMatch ? 700 : 500, color: isMatch ? 'var(--green-dim)' : 'var(--ink)', borderBottom: '1px solid var(--border-soft)' }}>{b.label}</td>
-                        <td style={{ padding: '10px 16px', color: 'var(--slate)', fontFamily: 'var(--font-mono)', fontSize: 11.5, borderBottom: '1px solid var(--border-soft)' }}>{b.section}</td>
+                        <td style={{ padding: '10px 16px', color: 'var(--slate)', fontFamily: 'var(--font-mono)', fontSize: 12, borderBottom: '1px solid var(--border-soft)' }}>{b.section}</td>
                         <td style={{ padding: '10px 16px', color: 'var(--ink)', borderBottom: '1px solid var(--border-soft)' }}>{g?.label ?? '—'}</td>
-                        <td style={{ padding: '10px 16px', color: 'var(--slate)', fontFamily: 'var(--font-mono)', fontSize: 11.5, borderBottom: '1px solid var(--border-soft)' }}>{g?.article ?? '—'}</td>
+                        <td style={{ padding: '10px 16px', color: 'var(--slate)', fontFamily: 'var(--font-mono)', fontSize: 12, borderBottom: '1px solid var(--border-soft)' }}>{g?.article ?? '—'}</td>
                       </tr>
                     );
                   })}
@@ -506,7 +506,7 @@ function RopaDetail({ recordId, onBack, onAction }) {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{entry.change}</div>
-                      <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 3 }}>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>
                         {entry.date} · by {entry.by}
                       </div>
                     </div>

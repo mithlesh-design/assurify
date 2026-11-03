@@ -45,7 +45,7 @@ function ScoreDonut({ score }) {
         alignItems: 'center', justifyContent: 'center',
       }}>
         <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{score}</div>
-        <div style={{ fontSize: 10.5, fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em' }}>%</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em' }}>%</div>
       </div>
     </div>
   );
@@ -122,7 +122,7 @@ function StatTile({ icon: Icon, label, value, sub, color, accent }) {
       }}>
         <Icon />
       </div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)',
         textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
         {label}
       </div>
@@ -130,7 +130,7 @@ function StatTile({ icon: Icon, label, value, sub, color, accent }) {
         lineHeight: 1, marginBottom: 5 }}>
         {value}
       </div>
-      <div style={{ fontSize: 11.5, color: 'var(--slate)' }}>{sub}</div>
+      <div style={{ fontSize: 12, color: 'var(--slate)' }}>{sub}</div>
     </div>
   );
 }
@@ -443,7 +443,7 @@ function PageDashboard({ onNavigate, meetings = [], evidence = [], ropaSummary, 
                 >
                   {/* ID tag */}
                   {/* <span style={{
-                    fontSize: 9.5, fontWeight: 800, padding: '2px 6px', borderRadius: 4,
+                    fontSize: 12, fontWeight: 800, padding: '2px 6px', borderRadius: 4,
                     background: 'var(--green-soft)', color: 'var(--green-dim)',
                     border: '1px solid var(--green-mid)', letterSpacing: '0.03em',
                     whiteSpace: 'nowrap', flexShrink: 0,
@@ -533,12 +533,12 @@ function PageDashboard({ onNavigate, meetings = [], evidence = [], ropaSummary, 
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span style={{
-                        fontSize: 10.5, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
+                        fontSize: 12, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
                         background: tagColor.bg, color: tagColor.text, border: `1px solid ${tagColor.border}`,
                       }}>
                         {isBlocked ? 'Blocked' : 'Needs discussion'}
                       </span>
-                      <span style={{ fontSize: 11, color: 'var(--slate)' }}>
+                      <span style={{ fontSize: 12, color: 'var(--slate)' }}>
                         {GAPP_PRINCIPLE_LABELS[c.obl] ?? c.obl?.replace(/_/g, ' ') ?? c.id}
                       </span>
                     </div>
@@ -580,7 +580,7 @@ function PageDashboard({ onNavigate, meetings = [], evidence = [], ropaSummary, 
             }}>
               {['Control', 'Status', 'Obligation'].map(h => (
                 <div key={h} style={{
-                  fontSize: 10.5, fontWeight: 700, color: 'var(--muted)',
+                  fontSize: 12, fontWeight: 700, color: 'var(--muted)',
                   textTransform: 'uppercase', letterSpacing: '0.07em',
                 }}>
                   {h}
@@ -618,12 +618,12 @@ function PageDashboard({ onNavigate, meetings = [], evidence = [], ropaSummary, 
                   </div>
                   {/* Status badge */}
                   <span className={`status-badge ${statusClass(c.status)}`}
-                    style={{ fontSize: 10.5, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+                    style={{ fontSize: 12, padding: '2px 8px', whiteSpace: 'nowrap' }}>
                     {statusLabel(c.status)}
                   </span>
                   {/* Obligation */}
                   <span style={{
-                    fontSize: 11.5, color: 'var(--slate)', whiteSpace: 'nowrap',
+                    fontSize: 12, color: 'var(--slate)', whiteSpace: 'nowrap',
                     overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160,
                   }}>
                     {oblName}

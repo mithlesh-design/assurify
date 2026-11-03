@@ -42,7 +42,7 @@ function TenantAvatar({ tenant, size = 36 }) {
 function StatusBadge({ active }) {
   return (
     <span style={{
-      fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+      fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
       background: active ? 'var(--green-soft)' : 'var(--bg)',
       color: active ? 'var(--green-dim)' : 'var(--muted)',
       border: `1px solid ${active ? 'var(--green-mid)' : 'var(--border)'}`,
@@ -58,7 +58,7 @@ function Pill({ children, color = 'var(--slate)', bg = 'var(--surface)', border 
   if (!children) return <span style={{ color: 'var(--muted)', fontSize: 12 }}>—</span>;
   return (
     <span style={{
-      fontSize: 11, fontWeight: 600, padding: '2px 9px', borderRadius: 'var(--r-pill)',
+      fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 'var(--r-pill)',
       background: bg, color, border: `1px solid ${border}`, whiteSpace: 'nowrap',
       display: 'inline-block',
     }}>
@@ -82,7 +82,7 @@ function UrlCell({ url }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
       <span style={{
-        fontSize: 11, color: 'var(--slate)', fontFamily: 'var(--font-mono)',
+        fontSize: 12, color: 'var(--slate)', fontFamily: 'var(--font-mono)',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         maxWidth: 200,
       }} title={url}>
@@ -363,7 +363,7 @@ export default function AdminTenants() {
                         </div>
                         {t.description && (
                           <div style={{
-                            fontSize: 11, color: 'var(--muted)', marginTop: 1,
+                            fontSize: 12, color: 'var(--muted)', marginTop: 1,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200,
                           }}>
                             {t.description}
@@ -381,7 +381,7 @@ export default function AdminTenants() {
                           width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
                           background: '#EFF6FF', color: '#1D4ED8',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 9, fontWeight: 700,
+                          fontSize: 12, fontWeight: 700,
                         }}>
                           {t.reviewer.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
@@ -390,7 +390,7 @@ export default function AdminTenants() {
                             {t.reviewer}
                           </div>
                           {t.reviewerEmail && (
-                            <div style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
                               {t.reviewerEmail}
                             </div>
                           )}
@@ -398,7 +398,7 @@ export default function AdminTenants() {
                       </div>
                     ) : (
                       <span style={{
-                        fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 4,
+                        fontSize: 12, fontWeight: 500, padding: '2px 8px', borderRadius: 4,
                         background: 'var(--risk-med-bg)', color: 'var(--risk-med-text)',
                         border: '1px solid var(--risk-med-border)',
                       }}>

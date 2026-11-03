@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Icons, Button, Modal, Progress } from '../ui';
+import { Icons, Button, Modal, Progress, PageActions } from '../ui';
 import { fetchVendors, createVendor, fetchVendorAssessment, updateVendorDpaStatus } from '../api/services/vendors';
 import { brandColor, normalizeVendor, riskTone, riskTextColor, DPA_OPTIONS, DPA_META, CATEGORY_LABELS } from '../data/vendors';
 import { InlineDropdown, DpaBadge } from '../components/VendorUi';
@@ -33,13 +33,13 @@ function StatTile({ icon: Icon, label, value, sub, color, accent }) {
       <div style={{ width: 30, height: 30, borderRadius: 7, background: `${accent}18`, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
         <Icon />
       </div>
-      <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>
         {label}
       </div>
       <div style={{ fontSize: 26, fontWeight: 900, color: color ?? 'var(--ink)', lineHeight: 1, marginBottom: 4 }}>
         {value}
       </div>
-      <div style={{ fontSize: 11.5, color: 'var(--slate)' }}>{sub}</div>
+      <div style={{ fontSize: 12, color: 'var(--slate)' }}>{sub}</div>
     </div>
   );
 }
@@ -118,7 +118,7 @@ function VendorCard({ vendor, onSelect, onDpaChange }) {
         {/* Col 3 — Category */}
         <div style={{ paddingRight: 16 }}>
           <span style={{
-            fontSize: 11.5, fontWeight: 600, padding: '4px 11px',
+            fontSize: 12, fontWeight: 600, padding: '4px 11px',
             borderRadius: 'var(--r-pill)',
             background: catCol.bg, color: catCol.text, border: `1px solid ${catCol.border}`,
             whiteSpace: 'nowrap', display: 'inline-block',
@@ -132,7 +132,7 @@ function VendorCard({ vendor, onSelect, onDpaChange }) {
           {hasScore ? (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>
                   {vendor.totalAnswered}/{vendor.totalCount} questions
                 </span>
                 <span style={{ fontSize: 13.5, fontWeight: 800, color: riskTextColor(vendor.compliancePct) }}>
@@ -373,7 +373,7 @@ function PageVendors({ onAction, onSummary }) {
                 { label: '',           style: {} },
               ].map((col, i) => (
                 <div key={i} style={{
-                  fontSize: 10.5, fontWeight: 700, color: 'var(--muted)',
+                  fontSize: 12, fontWeight: 700, color: 'var(--muted)',
                   textTransform: 'uppercase', letterSpacing: '0.07em',
                   ...col.style,
                 }}>
@@ -393,8 +393,11 @@ function PageVendors({ onAction, onSummary }) {
           </div>
         )}
 
-        {/* Portal trigger (header "Add vendor" button) */}
-        <div data-add-vendor-portal style={{ display: 'none' }} onClick={() => setShowAdd(true)} />
+        <PageActions>
+          <Button variant="primary" icon={<Icons.Plus size={15} />} onClick={() => setShowAdd(true)}>
+            Add vendor
+          </Button>
+        </PageActions>
 
         {/* ══ Add vendor modal ══════════════════════════════ */}
         {showAdd && (

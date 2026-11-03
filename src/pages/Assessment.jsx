@@ -69,14 +69,14 @@ function StatTile({ icon: Icon, label, value, sub, color, accent }) {
       }}>
         <Icon />
       </div>
-      <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--muted)',
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)',
         textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>
         {label}
       </div>
       <div style={{ fontSize: 26, fontWeight: 900, color: color ?? 'var(--ink)', lineHeight: 1, marginBottom: 4 }}>
         {value}
       </div>
-      <div style={{ fontSize: 11.5, color: 'var(--slate)' }}>{sub}</div>
+      <div style={{ fontSize: 12, color: 'var(--slate)' }}>{sub}</div>
     </div>
   );
 }
@@ -314,7 +314,7 @@ function AssessmentPage() {
                     )}
                     {needsAttn && (
                       <span style={{
-                        fontSize: 10, fontWeight: 700,
+                        fontSize: 12, fontWeight: 700,
                         background: 'var(--risk-med-bg)', color: 'var(--risk-med-text)',
                         border: '1px solid var(--risk-med-border)',
                         padding: '2px 7px', borderRadius: 4,

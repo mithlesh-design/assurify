@@ -1,4 +1,5 @@
-import { Icons } from './ui';
+import { useRef } from 'react';
+import { Icons, useDialog } from './ui';
 import { useApp } from './context/AppContext';
 
 const ASSESSMENT_SUBNAV = [
@@ -19,12 +20,12 @@ const NAV = [
     items: [
       { id: 'dashboard',      label: 'Dashboard',              icon: 'Dashboard' },
       { id: 'assessment',     label: 'DPDP Assessment',        icon: 'Shield' },
-      { id: 'gdpr-assessment', label: 'GDPR Assessment', icon: 'Shield' },
+      { id: 'gdpr-assessment', label: 'GDPR Assessment',       icon: 'Shield' },
       { id: 'questionnaire',  label: 'Onboarding responses',   icon: 'File' },
-      { id: 'meetings', label: 'Meetings Tracker', icon: 'Calendar' },
-      { id: 'evidence', label: 'Evidence Tracker', icon: 'Shield' },
-      { id: 'data-breach', label: 'Data Breach', icon: 'Alert' },
-      { id: 'data-rights', label: 'Data Principal Rights', icon: 'Users' },
+      { id: 'meetings',       label: 'Meetings tracker',       icon: 'Calendar' },
+      { id: 'evidence',       label: 'Evidence tracker',       icon: 'Clipboard' },
+      { id: 'data-breach',    label: 'Data breaches',          icon: 'Alert' },
+      { id: 'data-rights',    label: 'Data Principal rights',  icon: 'Users' },
     ],
   },
   /* Temporarily hidden until these modules are in use.
@@ -40,11 +41,11 @@ const NAV = [
   {
     section: 'Compliance',
     items: [
-      { id: 'vendors',             label: 'Vendors (TPRM)',        icon: 'Building', badge: 7 },
-      { id: 'ropa',                label: 'RoPA Register',         icon: 'File' },
-      { id: 'policies',            label: 'Policies',               icon: 'File' },
+      { id: 'vendors',             label: 'Vendors (TPRM)',        icon: 'Building' },
+      { id: 'ropa',                label: 'RoPA register',         icon: 'Database' },
+      { id: 'policies',            label: 'Policies',              icon: 'File' },
       { id: 'compliance-report',   label: 'Compliance report',     icon: 'Chart' },
-      { id: 'reports',             label: 'Board reports',         icon: 'File' },
+      { id: 'reports',             label: 'Board reports',         icon: 'Report' },
     ],
   },
 ];
@@ -60,7 +61,7 @@ const ADMIN_NAV = [
   {
     section: 'Management',
     items: [
-      { id: 'admin-users',   label: 'Users & Reviewers', icon: 'Database' },
+      { id: 'admin-users',   label: 'Users & reviewers', icon: 'Users' },
       { id: 'admin-tenants', label: 'Tenants',           icon: 'Building' },
     ],
   },
@@ -69,28 +70,28 @@ const ADMIN_NAV = [
 const PAGE_TITLES = {
   /* ── Admin pages ── */
   'admin-dashboard': 'Admin Dashboard',
-  'admin-users':   'Users & Reviewers',
+  'admin-users':   'Users & reviewers',
   'admin-tenants': 'Tenants',
   /* ── Profile pages ── */
   'profile':       'My profile',
   'profile-setup': 'Complete your profile',
   /* ── Reviewer pages ── */
-  dashboard:          'Assessment Command Centre',
+  dashboard:          'Assessment Command Center',
   assessment:         'DPDP Assessment',
   'gdpr-assessment':  'GDPR Assessment',
-  questionnaire:      'Onboarding Questionnaire',
-  meetings:           'Meetings Tracker',
-  evidence:           'Evidence Tracker',
-  'data-breach':      'Data Breach Management',
-  'data-rights':      'Data Principal Rights Requests',
-  inventory:          'Data Inventory',
-  consent:            'Consent Manager',
-  privacy:            'Privacy Notice Generator',
-  vendors:            'Vendor Risk Management (TPRM)',
-  ropa:               'Records of Processing Activities (RoPA)',
+  questionnaire:      'Onboarding responses',
+  meetings:           'Meetings tracker',
+  evidence:           'Evidence tracker',
+  'data-breach':      'Data breach management',
+  'data-rights':      'Data Principal rights requests',
+  inventory:          'Data inventory',
+  consent:            'Consent manager',
+  privacy:            'Privacy notice generator',
+  vendors:            'Vendor risk management (TPRM)',
+  ropa:               'Records of processing activities (RoPA)',
   policies:           'Policies',
-  reports:            'Board Compliance Reports',
-  'compliance-report':'DPDP Compliance Report',
+  reports:            'Board compliance reports',
+  'compliance-report':'DPDP compliance report',
   'obl-1':            'OBL-1 — Consent Management',
   'obl-2':            'OBL-2 — Privacy Notice (Section 5)',
   'obl-3':            'OBL-3 — Data Principal Rights',
@@ -102,13 +103,17 @@ const PAGE_TITLES = {
 };
 
 
-function Sidebar({ active, onNavigate, onLogout, nav = NAV, portalLabel }) {
+function Sidebar({ active, onNavigate, onLogout, nav = NAV, portalLabel, open = false, onClose }) {
   const { user, logout, controls } = useApp();
+  const ref           = useRef(null);
   const handleLogout  = onLogout ?? logout;
   const isOblPage     = active.startsWith('obl-');
   const role          = (user?.role ?? '').toLowerCase();
   const isCustomer    = role === 'user';
   const isAdmin       = role === 'admin';
+
+  /* On tablet/phone the sidebar is a drawer: Escape closes it and focus stays inside */
+  useDialog(ref, onClose, { active: open });
 
   const pill = portalLabel ?? (isAdmin ? 'Admin' : isCustomer ? 'Customer' : 'Reviewer');
   const footerRole = isAdmin
@@ -121,82 +126,114 @@ function Sidebar({ active, onNavigate, onLogout, nav = NAV, portalLabel }) {
     ? controls.filter(c => c.status === 'blocked' || c.status === 'needs_discussion').length
     : 0;
 
+  const go = (id) => { onNavigate(id); onClose?.(); };
+
   return (
-    <aside className="sidebar">
-      {/* Header — white background */}
-      <div className="sidebar-header">
-        <img
-          src="/AssurifyLogo.svg"
-          alt="Assurify"
-          style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block', minWidth: 0, flex: 1 }}
-        />
-        <span className="portal-pill">{pill}</span>
-      </div>
-
-      {/* Nav */}
-      <nav className="sidebar-nav-scroll">
-        {nav.map((group) => (
-          <div key={group.section}>
-            <div className="sidebar-section">{group.section}</div>
-            <div className="sidebar-nav">
-              {group.items.map((item) => {
-                const I = Icons[item.icon];
-                const isActive = item.id === 'assessment'
-                  ? active === 'assessment' || isOblPage
-                  : active === item.id;
-
-                return (
-                  <button
-                    key={item.id}
-                    className={`nav-item${isActive ? ' active' : ''}`}
-                    onClick={() => onNavigate(item.id)}
-                  >
-                    <span className="nav-item-icon"><I size={16} /></span>
-                    <span className="nav-item-label">{item.label}</span>
-                    {item.badge != null && (
-                      <span className="nav-item-badge">{item.badge}</span>
-                    )}
-                    {item.id === 'assessment' && urgentCount > 0 && (
-                      <span className="nav-item-badge">{urgentCount}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Footer */}
-      <div className="sidebar-footer">
-        <div
-          className="user-row"
-          onClick={!isAdmin ? () => onNavigate('profile') : undefined}
-          style={!isAdmin ? { cursor: 'pointer' } : {}}
-          title={!isAdmin ? 'View profile' : undefined}
-        >
-          <div className="user-avatar">{user?.initials ?? '?'}</div>
-          <div className="user-info">
-            <div className="user-name">{user?.name ?? 'User'}</div>
-            <div className="user-role">{footerRole}</div>
-          </div>
-          {!isAdmin && <Icons.Settings size={14} className="user-cog" />}
+    <>
+      {open && <div className="sidebar-backdrop" onClick={onClose} aria-hidden="true" />}
+      <aside
+        ref={ref}
+        className={`sidebar${open ? ' open' : ''}`}
+        aria-label="Main navigation"
+        {...(open ? { role: 'dialog', 'aria-modal': 'true', tabIndex: -1 } : {})}
+      >
+        {/* Header */}
+        <div className="sidebar-header">
+          <img src="/AssurifyLogo.svg" alt="Assurify" className="sidebar-logo" />
+          <span className="portal-pill">{pill}</span>
+          <button type="button" className="icon-btn sidebar-close" onClick={onClose} aria-label="Close menu">
+            <Icons.X size={16} />
+          </button>
         </div>
-        <button className="sidebar-signout" onClick={handleLogout}>
-          <Icons.Signout size={15} />
-          <span>Sign out</span>
-        </button>
-      </div>
-    </aside>
+
+        {/* Nav */}
+        <nav className="sidebar-nav-scroll">
+          {nav.map((group) => (
+            <div key={group.section}>
+              <div className="sidebar-section">{group.section}</div>
+              <div className="sidebar-nav">
+                {group.items.map((item) => {
+                  const I = Icons[item.icon];
+                  const isActive = item.id === 'assessment'
+                    ? active === 'assessment' || isOblPage
+                    : active === item.id;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`nav-item${isActive ? ' active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      onClick={() => go(item.id)}
+                    >
+                      <span className="nav-item-icon"><I size={17} /></span>
+                      <span className="nav-item-label">{item.label}</span>
+                      {item.badge != null && (
+                        <span className="nav-item-badge">{item.badge}</span>
+                      )}
+                      {item.id === 'assessment' && urgentCount > 0 && (
+                        <span className="nav-item-badge" title={`${urgentCount} controls blocked or needing discussion`}>
+                          {urgentCount}
+                          <span className="sr-only"> controls need attention</span>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="sidebar-footer">
+          {isAdmin ? (
+            <div className="user-row user-row-static">
+              <div className="user-avatar">{user?.initials ?? '?'}</div>
+              <div className="user-info">
+                <div className="user-name">{user?.name ?? 'User'}</div>
+                <div className="user-role">{footerRole}</div>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className={`user-row${active === 'profile' ? ' active' : ''}`}
+              onClick={() => go('profile')}
+              aria-current={active === 'profile' ? 'page' : undefined}
+            >
+              <div className="user-avatar">{user?.initials ?? '?'}</div>
+              <div className="user-info">
+                <div className="user-name">{user?.name ?? 'User'}</div>
+                <div className="user-role">{footerRole}</div>
+              </div>
+              <Icons.Settings size={15} className="user-cog" aria-hidden="true" />
+              <span className="sr-only">Open my profile</span>
+            </button>
+          )}
+          <button type="button" className="sidebar-signout" onClick={handleLogout}>
+            <Icons.Signout size={15} />
+            <span>Sign out</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 
-function PageHeader({ title, actions }) {
+/* PageHeader — sticky top bar. `actionsRef` receives the actions container so
+   pages can portal their own buttons into it (see <PageActions>). */
+function PageHeader({ title, actions, onMenu, actionsRef }) {
   return (
-    <div className="page-header">
-      <h1 className="page-header-title">{title}</h1>
-      {actions && <div className="page-header-actions">{actions}</div>}
-    </div>
+    <header className="page-header">
+      {onMenu && (
+        <button type="button" className="icon-btn page-header-menu" onClick={onMenu} aria-label="Open menu">
+          <Icons.Menu size={18} />
+        </button>
+      )}
+      <h1 className="page-header-title" title={title}>{title}</h1>
+      <div className="page-header-actions" ref={actionsRef}>{actions}</div>
+    </header>
   );
 }
 

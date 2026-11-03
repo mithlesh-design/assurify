@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Button, Icons, Toast } from './ui';
+import { Button, Icons, PageActionsProvider } from './ui';
 import { Sidebar, PageHeader, PAGE_TITLES, ADMIN_NAV } from './layout';
 import { useApp }               from './context/AppContext';
 import { useToast }             from './context/ToastContext';
@@ -48,30 +48,30 @@ import { fetchMeetings, fetchEvidences } from './api/services/meetEvidence';
 /* ── Full-screen loading ─────────────────────────────── */
 function AppLoadingScreen() {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      height: '100vh', gap: 16, background: 'var(--bg)',
-    }}>
-      <div style={{
-        width: 64, height: 64, borderRadius: 18, background: 'var(--black)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 8px 24px rgba(27,54,128,0.25)',
-      }}>
-        <img src="/faviconDPA.svg" alt="DPDPA" style={{ width: 38, height: 38 }} />
-      </div>
-      <div style={{ textAlign: 'center' }}>
-        <img src="/AssurifyLogo.svg" alt="Assurify" style={{ height: 28, width: 'auto', marginBottom: 6 }} />
-        <p style={{ fontSize: 13, color: 'var(--slate)', margin: 0 }}>Checking your session…</p>
-      </div>
-      <div style={{
-        width: 32, height: 32, border: '3px solid var(--border)',
-        borderTop: '3px solid var(--green)', borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite',
-      }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div className="app-loading" role="status" aria-live="polite">
+      <img src="/AssurifyLogo.svg" alt="Assurify" className="app-loading-logo" />
+      <span className="loading-spinner" aria-hidden="true" />
+      <p>Checking your session…</p>
     </div>
   );
+}
+
+/* Responsive navigation: the sidebar is a drawer below 1024px. Closes itself
+   when the window grows back to desktop width. */
+function useNavDrawer() {
+  const [navOpen, setNavOpen] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = () => { if (mq.matches) setNavOpen(false); };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return [navOpen, setNavOpen];
+}
+
+/* Scroll to the top of the page whenever the user moves to a different page */
+function useScrollTopOnPageChange(page) {
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [page]);
 }
 
 /* ── Root shell — auth gate ──────────────────────────── */
@@ -154,6 +154,9 @@ function AdminPortalApp() {
   }, []);
 
   const navigate = (p) => setPage(p);
+  const [navOpen, setNavOpen] = useNavDrawer();
+  const [actionsSlot, setActionsSlot] = useState(null);
+  useScrollTopOnPageChange(page);
 
   const handleLogout = async () => {
     await logout();
@@ -167,11 +170,12 @@ function AdminPortalApp() {
 
   return (
     <div className="app-shell portal-reviewer">
-      <Sidebar active={page} onNavigate={navigate} onLogout={handleLogout} nav={ADMIN_NAV} />
-      <div className="main">
-        <PageHeader title={PAGE_TITLES[page] ?? page} />
-        {pageEl}
-      </div>
+      <Sidebar active={page} onNavigate={navigate} onLogout={handleLogout} nav={ADMIN_NAV}
+        open={navOpen} onClose={() => setNavOpen(false)} />
+      <main className="main">
+        <PageHeader title={PAGE_TITLES[page] ?? page} onMenu={() => setNavOpen(true)} actionsRef={setActionsSlot} />
+        <PageActionsProvider value={actionsSlot}>{pageEl}</PageActionsProvider>
+      </main>
     </div>
   );
 }
@@ -221,8 +225,14 @@ function ReviewerApp() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  const [navOpen, setNavOpen] = useNavDrawer();
+  const [actionsSlot, setActionsSlot] = useState(null);
+  const [printReport, setPrintReport] = useState(false);
+  useScrollTopOnPageChange(page);
+
   const navigate  = (p) => { setPage(p); if (p !== 'ropa') setRopaRecordId(null); };
   const showToast = (msg) => toast.info(msg);
+  const openReportForPrint = () => { setPrintReport(true); navigate('compliance-report'); };
 
   const handleLogout = async () => {
     await logout();
@@ -231,83 +241,42 @@ function ReviewerApp() {
 
   /* Full-page report — no sidebar */
   if (page === 'compliance-report') {
-    return <ComplianceReport onNavigate={navigate} />;
+    return (
+      <ComplianceReport
+        onNavigate={(p) => { setPrintReport(false); navigate(p); }}
+        autoPrint={printReport}
+        onPrinted={() => setPrintReport(false)}
+      />
+    );
   }
 
-  /* Per-page header actions */
+  /* Per-page header actions. Pages that own their primary action (Add vendor,
+     Add activity, Export…) render it themselves with <PageActions>. Actions that
+     need a backend which does not exist yet are not shown. */
   let headerActions = null;
   if (page === 'dashboard') {
     headerActions = (
       <>
-        <Button onClick={() => navigate('compliance-report')}>📄 View report</Button>
-        <Button variant="primary" onClick={() => navigate('assessment')}>Review assessment →</Button>
+        <Button icon={<Icons.Report size={15} />} onClick={() => navigate('compliance-report')}>View report</Button>
+        <Button variant="primary" onClick={() => navigate('assessment')}>
+          Review assessment <Icons.ChevronRight size={15} />
+        </Button>
       </>
     );
   } else if (page === 'assessment' || page.startsWith('obl-')) {
     headerActions = (
       <>
-        <Button icon={<Icons.Download size={14} />} onClick={() => showToast('PDF exported')}>
+        <Button icon={<Icons.Download size={15} />} onClick={openReportForPrint} title="Opens the compliance report and your browser's Save as PDF dialog">
           Export PDF
         </Button>
-        <Button variant="primary" onClick={() => navigate('compliance-report')}>
-          📄 Compliance report
-        </Button>
-      </>
-    );
-  } else if (page === 'inventory') {
-    headerActions = (
-      <>
-        <Button icon={<Icons.Refresh size={14} />} onClick={() => showToast('Re-scanning all sources')}>
-          Re-scan all
-        </Button>
-        <Button variant="primary" icon={<Icons.Plus size={14} />}
-          onClick={() => document.querySelector('[data-add-source-portal]')?.click()}>
-          Add source
-        </Button>
-      </>
-    );
-  } else if (page === 'consent') {
-    headerActions = (
-      <Button variant="primary" icon={<Icons.Code size={14} />} onClick={() => showToast('Embed code copied')}>
-        Get embed code
-      </Button>
-    );
-  } else if (page === 'vendors') {
-    headerActions = (
-      <>
-        <Button icon={<Icons.Sparkles size={14} />} onClick={() => showToast('Generating all missing DPAs')}>
-          Generate all missing DPAs
-        </Button>
-        <Button variant="primary" icon={<Icons.Plus size={14} />}
-          onClick={() => document.querySelector('[data-add-vendor-portal]')?.click()}>
-          Add vendor
-        </Button>
-      </>
-    );
-  } else if (page === 'reports') {
-    headerActions = (
-      <>
-        <Button icon={<Icons.Share size={14} />} onClick={() => showToast('Share link copied')}>Share</Button>
-        <Button variant="primary" icon={<Icons.Plus size={14} />} onClick={() => showToast('New report generated')}>
-          New report
-        </Button>
-      </>
-    );
-  } else if (page === 'ropa') {
-    headerActions = (
-      <>
-        <Button icon={<Icons.Download size={14} />} onClick={() => showToast('Exporting RoPA register…')}>
-          Export XLSX
-        </Button>
-        <Button variant="primary" icon={<Icons.Plus size={14} />}
-          onClick={() => document.querySelector('[data-add-ropa-portal]')?.click()}>
-          Add activity
+        <Button variant="primary" icon={<Icons.Report size={15} />} onClick={() => navigate('compliance-report')}>
+          Compliance report
         </Button>
       </>
     );
   } else if (page === 'questionnaire') {
     headerActions = (
-      <Button icon={<Icons.Refresh size={14} />} onClick={() => setQuestKey(k => k + 1)}>
+      <Button icon={<Icons.Refresh size={15} />} onClick={() => setQuestKey(k => k + 1)}>
         Refresh
       </Button>
     );
@@ -353,11 +322,13 @@ function ReviewerApp() {
 
   return (
     <div className={`app-shell ${portalClass}`}>
-      <Sidebar active={page} onNavigate={navigate} onLogout={handleLogout} />
-      <div className="main">
-        <PageHeader title={PAGE_TITLES[page] ?? page} actions={headerActions} />
-        {pageEl}
-      </div>
+      <Sidebar active={page} onNavigate={navigate} onLogout={handleLogout}
+        open={navOpen} onClose={() => setNavOpen(false)} />
+      <main className="main">
+        <PageHeader title={PAGE_TITLES[page] ?? page} actions={headerActions}
+          onMenu={() => setNavOpen(true)} actionsRef={setActionsSlot} />
+        <PageActionsProvider value={actionsSlot}>{pageEl}</PageActionsProvider>
+      </main>
       {!tenant && page !== 'profile-setup' && <TenantSelectModal />}
       {showProfilePrompt && (
         <ProfileIncompleteModal

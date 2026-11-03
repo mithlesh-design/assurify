@@ -113,7 +113,7 @@ function PageReports({ onAction }) {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11.5, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontSize: 12, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Score
                 </div>
                 <div style={{
@@ -133,7 +133,7 @@ function PageReports({ onAction }) {
 
           <div style={{ padding: '20px 28px' }}>
             <h3 style={{
-              fontSize: 11.5, fontWeight: 600, color: 'var(--text-subtle)',
+              fontSize: 12, fontWeight: 600, color: 'var(--text-subtle)',
               letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px',
             }}>Executive summary</h3>
             <p style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--text-muted)', margin: 0, maxWidth: '72ch' }}>
@@ -143,7 +143,7 @@ function PageReports({ onAction }) {
 
           <div style={{ padding: '8px 28px 24px' }}>
             <h3 style={{
-              fontSize: 11.5, fontWeight: 600, color: 'var(--text-subtle)',
+              fontSize: 12, fontWeight: 600, color: 'var(--text-subtle)',
               letterSpacing: '0.08em', textTransform: 'uppercase', margin: '16px 0 14px',
             }}>Obligation status</h3>
             <div>

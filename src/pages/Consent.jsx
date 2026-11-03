@@ -87,7 +87,7 @@ function PageConsent({ onAction }) {
                     <div className="checkbox-row-title">
                       {p.label}
                       {p.required && (
-                        <span style={{ fontSize: 11, marginLeft: 8, color: 'var(--text-subtle)', fontWeight: 500 }}>
+                        <span style={{ fontSize: 12, marginLeft: 8, color: 'var(--text-subtle)', fontWeight: 500 }}>
                           · Required
                         </span>
                       )}
@@ -133,7 +133,7 @@ function PageConsent({ onAction }) {
                         {p.checked && <Icons.Check size={9} />}
                       </div>
                       <span>{p.label}</span>
-                      {p.required && <span style={{ color: 'var(--text-subtle)', fontSize: 11 }}>(required)</span>}
+                      {p.required && <span style={{ color: 'var(--text-subtle)', fontSize: 12 }}>(required)</span>}
                     </label>
                   ))}
                 </div>
@@ -145,7 +145,7 @@ function PageConsent({ onAction }) {
                     Decline optional
                   </Button>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text-subtle)', marginTop: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 12, color: 'var(--text-subtle)', marginTop: 12, textAlign: 'center' }}>
                   Powered by <span style={{ fontWeight: 600 }}>Appzlogic</span> · Section 5 compliant
                 </div>
               </div>
@@ -160,7 +160,7 @@ function PageConsent({ onAction }) {
                 <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Embed code</div>
                 <code style={{
                   display: 'block', fontFamily: 'var(--font-mono)',
-                  fontSize: 11.5, background: 'var(--bg)', padding: '8px 10px',
+                  fontSize: 12, background: 'var(--bg)', padding: '8px 10px',
                   borderRadius: 6, color: 'var(--text-muted)', overflowX: 'auto',
                   border: '1px solid var(--border)',
                 }}>

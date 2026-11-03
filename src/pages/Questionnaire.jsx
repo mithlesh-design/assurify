@@ -141,7 +141,7 @@ export default function PageQuestionnaire({ onAction, onSummary }) {
                 <div className="card-subtitle">{grouped[cat].length} question{grouped[cat].length !== 1 ? 's' : ''}</div>
               </div>
               <span style={{
-                fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-pill)',
+                fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-pill)',
                 background: 'var(--green-soft)', color: 'var(--green-dim)', border: '1px solid var(--green-mid)',
               }}>
                 {grouped[cat].filter(q => Array.isArray(q.selected) && q.selected.length > 0).length}/{grouped[cat].length} answered

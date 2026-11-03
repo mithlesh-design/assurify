@@ -91,7 +91,7 @@ export function DpaBadge({ status, chevron }) {
   const meta = DPA_META[status?.toLowerCase()] ?? DPA_META.missing;
   return (
     <span style={{
-      fontSize: 11.5, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--r-pill)',
+      fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--r-pill)',
       background: meta.bg, color: meta.text, border: `1px solid ${meta.border}`,
       whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5,
     }}>
@@ -109,7 +109,7 @@ export function RespBadge({ apiValue, chevron }) {
   if (!meta) {
     return (
       <span style={{
-        fontSize: 10.5, fontWeight: 600, padding: '3px 8px', borderRadius: 5,
+        fontSize: 12, fontWeight: 600, padding: '3px 8px', borderRadius: 5,
         background: 'var(--surface)', color: 'var(--slate)', border: '1px solid var(--border)',
         flexShrink: 0, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3,
       }}>
@@ -119,7 +119,7 @@ export function RespBadge({ apiValue, chevron }) {
   }
   return (
     <span style={{
-      fontSize: 10.5, fontWeight: 600, padding: '3px 8px', borderRadius: 5,
+      fontSize: 12, fontWeight: 600, padding: '3px 8px', borderRadius: 5,
       background: meta.bg, color: meta.text, border: `1px solid ${meta.border}`,
       flexShrink: 0, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3,
     }}>

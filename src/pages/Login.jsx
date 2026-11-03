@@ -214,7 +214,7 @@ function RegisterForm({ onDone }) {
             );
           })}
         </div>
-        <div style={{ fontSize: 11.5, color: 'var(--slate)', marginTop: 7, lineHeight: 1.55 }}>
+        <div style={{ fontSize: 12, color: 'var(--slate)', marginTop: 7, lineHeight: 1.55 }}>
           <strong>Admin</strong> — full access ·{' '}
           <strong>Reviewer</strong> — review &amp; approve ·{' '}
           <strong>User</strong> — view &amp; comment

@@ -50,7 +50,7 @@ function CertRow({ cert, onDelete }) {
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {cert.name}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>
           {new Date(cert.uploadedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
         </div>
       </div>
@@ -58,24 +58,24 @@ function CertRow({ cert, onDelete }) {
       {/* Actions */}
       {confirm ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-          <span style={{ fontSize: 11.5, color: '#B91C1C', fontWeight: 600 }}>Delete?</span>
+          <span style={{ fontSize: 12, color: '#B91C1C', fontWeight: 600 }}>Delete?</span>
           <button onClick={handleDelete} disabled={deleting} style={{
             background: '#DC2626', color: '#fff', border: 'none',
-            borderRadius: 5, padding: '3px 9px', fontSize: 11.5,
+            borderRadius: 5, padding: '3px 9px', fontSize: 12,
             fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
           }}>
             {deleting ? <Spin size={11} /> : 'Yes'}
           </button>
           <button onClick={() => setConfirm(false)} style={{
             background: 'none', border: '1px solid var(--border)', borderRadius: 5,
-            padding: '3px 8px', fontSize: 11.5, color: 'var(--slate)', cursor: 'pointer',
+            padding: '3px 8px', fontSize: 12, color: 'var(--slate)', cursor: 'pointer',
           }}>No</button>
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {cert.url && (
             <a href={cert.url} download target="_blank" rel="noreferrer" style={{
-              fontSize: 11.5, fontWeight: 600, color: 'var(--green)',
+              fontSize: 12, fontWeight: 600, color: 'var(--green)',
               textDecoration: 'none', padding: '3px 9px',
               border: '1px solid var(--green-mid)', borderRadius: 5,
               background: 'var(--green-soft)',
@@ -115,7 +115,7 @@ function StagedRow({ file, onRemove }) {
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {file.name}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--green-dim)', opacity: 0.7, marginTop: 1 }}>
+        <div style={{ fontSize: 12, color: 'var(--green-dim)', opacity: 0.7, marginTop: 1 }}>
           {(file.size / 1024).toFixed(0)} KB · Queued
         </div>
       </div>
@@ -173,7 +173,7 @@ function Dropzone({ files, onChange }) {
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>
           Click or drag files here
         </div>
-        <div style={{ fontSize: 11, color: 'var(--muted)' }}>PDF, PNG, JPG, DOCX</div>
+        <div style={{ fontSize: 12, color: 'var(--muted)' }}>PDF, PNG, JPG, DOCX</div>
       </div>
       <input ref={inputRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.docx,.doc"
         style={{ display: 'none' }} onChange={e => addFiles(e.target.files)} />
@@ -191,7 +191,7 @@ function Dropzone({ files, onChange }) {
 /* ── Field label ─────────────────────────────────────── */
 function FieldLabel({ children }) {
   return (
-    <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--slate)',
+    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--slate)',
       textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
       {children}
     </div>
@@ -327,7 +327,7 @@ export default function PageProfile() {
               {loadingUser ? '—' : (username || user?.name)}
             </h2>
             <span style={{
-              fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
+              fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
               background: 'rgba(0,170,191,0.25)', color: 'var(--green-mid)',
               border: '1px solid rgba(0,170,191,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase',
             }}>
@@ -355,7 +355,7 @@ export default function PageProfile() {
           ].map(s => (
             <div key={s.label} style={{ textAlign: 'center', minWidth: 60 }}>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 3 }}>{s.label}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 3 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -383,7 +383,7 @@ export default function PageProfile() {
             </div>
             <div>
               <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)' }}>Personal information</div>
-              <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>Update your details and bio</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Update your details and bio</div>
             </div>
           </div>
           <div className="profile-divider" style={{ background: 'var(--border)' }} />
@@ -407,13 +407,13 @@ export default function PageProfile() {
                 Certificates
                 {certs.length > 0 && (
                   <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 100,
+                    fontSize: 12, fontWeight: 700, padding: '1px 7px', borderRadius: 100,
                     background: 'var(--green-soft)', color: 'var(--green-dim)',
                     border: '1px solid var(--green-mid)',
                   }}>{certs.length}</span>
                 )}
               </div>
-              <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>Upload and manage documents</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Upload and manage documents</div>
             </div>
           </div>
         </div>
@@ -476,7 +476,7 @@ export default function PageProfile() {
             ) : certs.length > 0 ? (
               <div>
                 <div style={{
-                  fontSize: 10.5, fontWeight: 700, color: 'var(--muted)',
+                  fontSize: 12, fontWeight: 700, color: 'var(--muted)',
                   letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8,
                 }}>
                   Uploaded ({certs.length})

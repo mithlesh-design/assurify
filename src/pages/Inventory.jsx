@@ -122,10 +122,10 @@ function PageInventory({ onAction }) {
                 <td>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {s.pii.slice(0, 2).map((p) => (
-                      <span key={p} className="tag" style={{ fontSize: 11.5, padding: '2px 7px' }}>{p}</span>
+                      <span key={p} className="tag" style={{ fontSize: 12, padding: '2px 7px' }}>{p}</span>
                     ))}
                     {s.pii.length > 2 && (
-                      <span className="tag" style={{ fontSize: 11.5, padding: '2px 7px', color: 'var(--text-subtle)' }}>
+                      <span className="tag" style={{ fontSize: 12, padding: '2px 7px', color: 'var(--text-subtle)' }}>
                         +{s.pii.length - 2}
                       </span>
                     )}

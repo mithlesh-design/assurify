@@ -136,7 +136,7 @@ function StatusBadge({ status }) {
   const s = STATUS_MAP[status] ?? { label: status, bg: 'var(--bg)', color: 'var(--slate)', border: 'var(--border)' };
   return (
     <span style={{
-      fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-pill)',
+      fontSize: 12, fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-pill)',
       background: s.bg, color: s.color, border: `1px solid ${s.border}`,
       whiteSpace: 'nowrap',
     }}>
@@ -150,7 +150,7 @@ function RiskBadge({ risk }) {
   const r = RISK_MAP[risk] ?? { label: risk, color: 'var(--slate)', bg: 'var(--bg)' };
   return (
     <span style={{
-      fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-pill)',
+      fontSize: 12, fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-pill)',
       background: r.bg, color: r.color, border: `1px solid ${r.color}22`,
     }}>
       {r.label}
@@ -165,7 +165,7 @@ function SectionHead({ title, count }) {
       <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{title}</h2>
       {count != null && (
         <span style={{
-          fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--r-pill)',
+          fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--r-pill)',
           background: 'var(--green-soft)', color: 'var(--green-dim)', border: '1px solid var(--green-mid)',
         }}>{count}</span>
       )}
@@ -206,7 +206,7 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{r.name}</span>
                     <span style={{
-                      fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 'var(--r-pill)',
+                      fontSize: 12, fontWeight: 600, padding: '1px 7px', borderRadius: 'var(--r-pill)',
                       background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE',
                     }}>Reviewer</span>
                   </div>
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {r.tenants.map(t => (
                       <span key={t} style={{
-                        fontSize: 11, fontWeight: 500, padding: '3px 10px', borderRadius: 'var(--r-pill)',
+                        fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 'var(--r-pill)',
                         background: 'var(--green-soft)', color: 'var(--green-dim)',
                         border: '1px solid var(--green-mid)',
                       }}>{t}</span>
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div style={{
-                  fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 'var(--r-pill)',
+                  fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 'var(--r-pill)',
                   background: 'var(--surface)', color: 'var(--slate)', border: '1px solid var(--border)',
                   whiteSpace: 'nowrap', flexShrink: 0,
                 }}>
@@ -277,7 +277,7 @@ export default function AdminDashboard() {
                     background: cfg.bg, border: `1px solid ${cfg.color}22`,
                   }}>
                     <div style={{ fontSize: 22, fontWeight: 800, color: cfg.color, lineHeight: 1 }}>{count}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: cfg.color, marginTop: 4 }}>{cfg.label}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: cfg.color, marginTop: 4 }}>{cfg.label}</div>
                   </div>
                 );
               })}

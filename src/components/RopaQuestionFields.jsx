@@ -18,7 +18,7 @@ function MultiSelectField({ options, selected = [], onChange }) {
           <button key={option} type="button"
             onClick={() => onChange(active ? values.filter(value => value !== option) : [...values, option])}
             style={{
-              fontSize: 11.5, padding: '4px 10px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontWeight: active ? 700 : 500,
+              fontSize: 12, padding: '4px 10px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontWeight: active ? 700 : 500,
               background: active ? 'var(--green-soft)' : 'var(--surface)',
               color: active ? 'var(--green-dim)' : 'var(--slate)',
               border: `1.5px solid ${active ? 'var(--green-mid)' : 'var(--border)'}`,
@@ -72,10 +72,10 @@ function QuestionField({ question, value, onChange }) {
 
   return (
     <div style={{ marginBottom: 14, minWidth: 0, gridColumn: isRopaText(question) || isRopaMultiSelect(question) ? '1 / -1' : undefined }}>
-      <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
         {label}{question.is_required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
       </label>
-      {question.question && <div style={{ color: 'var(--muted)', fontSize: 11.5, marginBottom: 5 }}>{question.question}</div>}
+      {question.question && <div style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 5 }}>{question.question}</div>}
       {input}
     </div>
   );

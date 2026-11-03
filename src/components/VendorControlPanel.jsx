@@ -332,7 +332,7 @@ export default function VendorControlPanel({ subControl, onClose }) {
                 >
                   <RespBadge apiValue={response} />
                   {!statusUpdating && (
-                    <span style={{ fontSize: 10, color: 'var(--slate)', transform: statusDropOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s', display: 'inline-block' }}>▾</span>
+                    <span style={{ fontSize: 12, color: 'var(--slate)', transform: statusDropOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s', display: 'inline-block' }}>▾</span>
                   )}
                 </button>
 
@@ -361,7 +361,7 @@ export default function VendorControlPanel({ subControl, onClose }) {
                           onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--bg)'; }}
                           onMouseLeave={e => { e.currentTarget.style.background = active ? 'var(--green-soft)' : 'transparent'; }}
                         >
-                          {active && <span style={{ fontSize: 10, color: 'var(--green)' }}>✓</span>}
+                          {active && <span style={{ fontSize: 12, color: 'var(--green)' }}>✓</span>}
                           {s}
                         </button>
                       );

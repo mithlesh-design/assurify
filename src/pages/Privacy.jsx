@@ -36,7 +36,7 @@ function PrivacyDraft({ onReset, onAction }) {
                 <span style={{
                   width: 18, height: 18, borderRadius: 5,
                   background: 'var(--bg-elev)', border: '1px solid var(--border)',
-                  display: 'grid', placeItems: 'center', fontSize: 10,
+                  display: 'grid', placeItems: 'center', fontSize: 12,
                   fontFamily: 'var(--font-mono)', color: 'var(--text-subtle)',
                 }}>{i + 1}</span>
                 {s}
@@ -65,7 +65,7 @@ function PrivacyDraft({ onReset, onAction }) {
           </div>
           <div style={{ padding: '24px 28px', lineHeight: 1.65, color: 'var(--text-muted)', fontSize: 13.5 }}>
             <div style={{
-              fontSize: 11.5, color: 'var(--text-subtle)', fontWeight: 600,
+              fontSize: 12, color: 'var(--text-subtle)', fontWeight: 600,
               textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6,
             }}>Section 1 of 8</div>
             <h2 style={{ fontSize: 18, color: 'var(--text)', margin: '0 0 12px', letterSpacing: '-0.01em', fontWeight: 600 }}>

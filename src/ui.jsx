@@ -1,4 +1,8 @@
-import { useEffect } from 'react';
+import {
+  Children, cloneElement, createContext, isValidElement, useCallback, useContext,
+  useEffect, useId, useLayoutEffect, useRef, useState,
+} from 'react';
+import { createPortal } from 'react-dom';
 
 const Icon = ({ d, size = 18, stroke = 1.6, fill = 'none', ...props }) => (
   <svg
@@ -60,6 +64,12 @@ const Icons = {
   Cloud: (p) => <Icon {...p} d={<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>}/>,
   Card: (p) => <Icon {...p} d={<><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></>}/>,
   Pulse: (p) => <Icon {...p} d={<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>}/>,
+  Menu: (p) => <Icon {...p} d={<><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}/>,
+  More: (p) => <Icon {...p} d={<><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></>}/>,
+  Info: (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></>}/>,
+  Printer: (p) => <Icon {...p} d={<><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></>}/>,
+  Link: (p) => <Icon {...p} d={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>}/>,
+  Report: (p) => <Icon {...p} d={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></>}/>,
 };
 
 const SourceIcon = ({ type }) => {
@@ -85,12 +95,25 @@ const Badge = ({ tone = 'neutral', children, dot = false }) => (
   </span>
 );
 
-const Button = ({ variant = 'secondary', size, icon, children, onClick, type = 'button', style }) => (
-  <button type={type} onClick={onClick} style={style} className={`btn btn-${variant}${size ? ` btn-${size}` : ''}`}>
-    {icon}
-    {children}
-  </button>
-);
+/* Button — variant: primary | secondary | ghost | danger | danger-ghost; size: sm.
+   Pass `loading` to show a spinner and block repeat clicks. Any other prop
+   (disabled, title, aria-label, form…) is forwarded to the <button>. */
+const Button = ({
+  variant = 'secondary', size, icon, children, type = 'button', loading = false,
+  block = false, className = '', disabled, ...rest
+}) => {
+  const iconOnly = !children && !!icon;
+  const classes = [
+    'btn', `btn-${variant}`, size && `btn-${size}`, iconOnly && 'btn-icon',
+    block && 'btn-block', loading && 'btn-loading', className,
+  ].filter(Boolean).join(' ');
+  return (
+    <button type={type} className={classes} disabled={disabled || loading} aria-busy={loading || undefined} {...rest}>
+      {loading ? <span className="btn-spinner-inline" aria-hidden="true" /> : icon}
+      {children}
+    </button>
+  );
+};
 
 const StatTile = ({ label, value, meta, tone, icon }) => (
   <div className="stat-tile">
@@ -141,21 +164,307 @@ const ScoreRing = ({ value, size = 140, stroke = 11 }) => {
   );
 };
 
-const Modal = ({ title, icon, onClose, children, footer, width }) => (
-  <div className="modal-backdrop" onClick={onClose}>
-    <div className="modal" style={{ maxWidth: width || 560 }} onClick={(e) => e.stopPropagation()}>
-      <div className="modal-header">
-        {icon}
-        <h3 className="modal-title">{title}</h3>
-        <button className="icon-btn" onClick={onClose} style={{ border: 'none', background: 'transparent' }}>
-          <Icons.X size={16} />
-        </button>
+/* ── Dialog behaviour shared by every modal / drawer in the product ──
+   Escape closes the top-most dialog only, focus moves into the dialog and
+   returns to the trigger on close, and Tab stays inside the dialog. */
+const dialogStack = [];
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function useDialog(ref, onClose, { active = true, initialFocus = true } = {}) {
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useEffect(() => {
+    if (!active) return undefined;
+    const node = ref.current;
+    const token = {};
+    dialogStack.push(token);
+    const previouslyFocused = document.activeElement;
+
+    if (node && initialFocus) {
+      const target = node.querySelector('[data-autofocus]')
+        || node.querySelector('.modal-body ' + FOCUSABLE.split(', ').join(', .modal-body '))
+        || node;
+      requestAnimationFrame(() => {
+        if (!node.contains(document.activeElement)) target?.focus?.({ preventScroll: true });
+      });
+    }
+
+    const onKey = (e) => {
+      if (dialogStack[dialogStack.length - 1] !== token) return;
+      if (e.key === 'Escape' && closeRef.current) {
+        e.stopPropagation();
+        closeRef.current();
+        return;
+      }
+      if (e.key === 'Tab' && node) {
+        const items = [...node.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      const i = dialogStack.indexOf(token);
+      if (i >= 0) dialogStack.splice(i, 1);
+      if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus?.({ preventScroll: true });
+    };
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+/* Modal — size: sm (420) | md (560, default) | lg (760) | xl (960), or a numeric width.
+   On phones it becomes a full-height sheet with the footer pinned to the bottom. */
+const MODAL_SIZES = { sm: 420, md: 560, lg: 760, xl: 960 };
+const Modal = ({ title, subtitle, icon, onClose, children, footer, width, size, className = '', dismissible = true }) => {
+  const ref = useRef(null);
+  const titleId = useId();
+  useDialog(ref, dismissible ? onClose : null);
+  const maxWidth = width || MODAL_SIZES[size] || MODAL_SIZES.md;
+  return (
+    <div className="modal-backdrop" onMouseDown={(e) => { if (dismissible && e.target === e.currentTarget) onClose?.(); }}>
+      <div
+        ref={ref}
+        className={`modal ${className}`.trim()}
+        style={{ maxWidth }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        tabIndex={-1}
+      >
+        <div className="modal-header">
+          {icon && <span className="modal-header-icon">{icon}</span>}
+          <div className="modal-heading">
+            <h3 className="modal-title" id={titleId}>{title}</h3>
+            {subtitle && <p className="modal-subtitle">{subtitle}</p>}
+          </div>
+          {onClose && (
+            <button type="button" className="icon-btn modal-close" onClick={onClose} aria-label="Close dialog">
+              <Icons.X size={16} />
+            </button>
+          )}
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-footer">{footer}</div>}
       </div>
-      <div className="modal-body">{children}</div>
-      {footer && <div className="modal-footer">{footer}</div>}
     </div>
+  );
+};
+
+/* ConfirmDialog — use before destructive or irreversible actions. */
+const ConfirmDialog = ({
+  title = 'Are you sure?', message, confirmLabel = 'Confirm', cancelLabel = 'Cancel',
+  tone = 'danger', onConfirm, onCancel, busy = false,
+}) => (
+  <Modal
+    title={title}
+    size="sm"
+    onClose={busy ? undefined : onCancel}
+    dismissible={!busy}
+    icon={<Icons.Alert size={18} />}
+    className={`confirm-dialog confirm-${tone}`}
+    footer={(
+      <>
+        <Button variant="secondary" onClick={onCancel} disabled={busy}>{cancelLabel}</Button>
+        <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} loading={busy} data-autofocus>
+          {confirmLabel}
+        </Button>
+      </>
+    )}
+  >
+    <div className="confirm-message">{message}</div>
+  </Modal>
+);
+
+/* Field — label, optional/required marker, hint and error wired to the control for screen readers. */
+const Field = ({ label, required, optional, hint, error, children, className = '', id: idProp }) => {
+  const autoId = useId();
+  const child = Children.only(children);
+  const id = idProp || child.props.id || autoId;
+  const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [child.props['aria-describedby'], hintId, errorId].filter(Boolean).join(' ') || undefined;
+  const control = isValidElement(child)
+    ? cloneElement(child, {
+        id,
+        'aria-describedby': describedBy,
+        'aria-invalid': error ? true : child.props['aria-invalid'],
+        required: child.props.required ?? required,
+      })
+    : child;
+  return (
+    <div className={`field ${className}`.trim()}>
+      {label && (
+        <label className="field-label" htmlFor={id}>
+          {label}
+          {required && <span className="field-required" aria-hidden="true">*</span>}
+          {optional && <span className="field-optional">Optional</span>}
+        </label>
+      )}
+      {control}
+      {hint && !error && <div className="field-hint" id={hintId}>{hint}</div>}
+      {error && <div className="field-error" id={errorId} role="alert"><Icons.Alert size={13} />{error}</div>}
+    </div>
+  );
+};
+
+/* SearchInput — text input with a leading search icon. */
+const SearchInput = ({ value, onChange, placeholder = 'Search…', label, className = '', ...rest }) => (
+  <div className={`input-icon search-input ${className}`.trim()}>
+    <Icons.Search size={16} />
+    <input
+      type="search"
+      className="input"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      aria-label={label || placeholder}
+      {...rest}
+    />
   </div>
 );
+
+/* EmptyState — for empty lists and "no results" after filtering. */
+const EmptyState = ({ icon, title, description, action, compact = false }) => (
+  <div className={`empty${compact ? ' empty-compact' : ''}`} role="status">
+    <div className="empty-icon">{icon || <Icons.File size={22} />}</div>
+    {title && <h3 className="empty-title">{title}</h3>}
+    {description && <p className="empty-desc">{description}</p>}
+    {action}
+  </div>
+);
+
+/* LoadingState — consistent spinner + label while data loads. */
+const LoadingState = ({ label = 'Loading…', compact = false }) => (
+  <div className={`loading-state${compact ? ' loading-compact' : ''}`} role="status" aria-live="polite">
+    <span className="loading-spinner" aria-hidden="true" />
+    <span>{label}</span>
+  </div>
+);
+
+/* ErrorState — inline error with an optional retry. */
+const ErrorState = ({ title = 'Something went wrong', message, onRetry }) => (
+  <div className="error-state" role="alert">
+    <Icons.Alert size={18} />
+    <div>
+      <strong>{title}</strong>
+      {message && <p>{message}</p>}
+    </div>
+    {onRetry && <Button size="sm" variant="secondary" icon={<Icons.Refresh size={14} />} onClick={onRetry}>Try again</Button>}
+  </div>
+);
+
+/* RowActions — kebab menu for row-level actions in tables and cards.
+   items: [{ label, icon, onClick, danger, disabled, hidden }]. Rendered in a
+   portal so it is never clipped by scrolling table containers. */
+const RowActions = ({ items, label = 'More actions', align = 'end' }) => {
+  const visible = items.filter(item => item && !item.hidden);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+  const menuId = useId();
+
+  const place = useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const menuH = (menuRef.current?.offsetHeight) || visible.length * 40 + 12;
+    const menuW = Math.max(menuRef.current?.offsetWidth || 0, 200);
+    const below = r.bottom + 6 + menuH <= window.innerHeight - 8;
+    const top = below ? r.bottom + 6 : Math.max(8, r.top - 6 - menuH);
+    let left = align === 'end' ? r.right - menuW : r.left;
+    left = Math.min(Math.max(8, left), window.innerWidth - menuW - 8);
+    setPos({ top, left });
+  }, [align, visible.length]);
+
+  useLayoutEffect(() => { if (open) place(); }, [open, place]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => {
+      if (!menuRef.current?.contains(e.target) && !btnRef.current?.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); btnRef.current?.focus(); return; }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const els = [...(menuRef.current?.querySelectorAll('[role="menuitem"]:not([disabled])') ?? [])];
+        const i = els.indexOf(document.activeElement);
+        const next = e.key === 'ArrowDown' ? (i + 1) % els.length : (i - 1 + els.length) % els.length;
+        els[next]?.focus();
+      }
+    };
+    const onScroll = () => setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey, true);
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('scroll', onScroll, true);
+    requestAnimationFrame(() => menuRef.current?.querySelector('[role="menuitem"]:not([disabled])')?.focus());
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('resize', onScroll);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [open]);
+
+  if (!visible.length) return null;
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className="icon-btn row-actions-btn"
+        aria-label={label}
+        title={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
+      >
+        <Icons.More size={16} />
+      </button>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          id={menuId}
+          role="menu"
+          className="row-actions-menu"
+          style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {visible.map((item, i) => (
+            <button
+              key={item.label + i}
+              type="button"
+              role="menuitem"
+              className={`row-actions-item${item.danger ? ' danger' : ''}`}
+              disabled={item.disabled}
+              onClick={() => { setOpen(false); item.onClick?.(); }}
+            >
+              {item.icon && <span className="row-actions-icon">{item.icon}</span>}
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+};
+
+/* ── Page header action slot ──
+   Pages render their primary actions with <PageActions> and they appear in
+   the sticky page header (no DOM-click workarounds). */
+const PageActionsContext = createContext(null);
+const PageActionsProvider = PageActionsContext.Provider;
+const PageActions = ({ children }) => {
+  const target = useContext(PageActionsContext);
+  return target ? createPortal(children, target) : null;
+};
 
 const Toast = ({ message, onDismiss }) => {
   useEffect(() => {
@@ -170,4 +479,8 @@ const Toast = ({ message, onDismiss }) => {
   );
 };
 
-export { Icon, Icons, SourceIcon, Badge, Button, StatTile, Progress, ScoreRing, Modal, Toast };
+export {
+  Icon, Icons, SourceIcon, Badge, Button, StatTile, Progress, ScoreRing, Modal, Toast,
+  useDialog, ConfirmDialog, Field, SearchInput, EmptyState, LoadingState, ErrorState,
+  RowActions, PageActions, PageActionsProvider,
+};

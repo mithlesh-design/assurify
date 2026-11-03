@@ -11,7 +11,7 @@ function RoleBadge({ role }) {
   const s = ROLE_COLORS[role] ?? { bg: 'var(--bg)', color: 'var(--slate)', border: 'var(--border)' };
   return (
     <span style={{
-      fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+      fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
       background: s.bg, color: s.color, border: `1px solid ${s.border}`,
       textTransform: 'capitalize', display: 'inline-block',
     }}>
@@ -32,7 +32,7 @@ function StarRating({ value }) {
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
         </svg>
       ))}
-      <span style={{ fontSize: 11, color: 'var(--slate)', marginLeft: 2 }}>{Number(value).toFixed(1)}</span>
+      <span style={{ fontSize: 12, color: 'var(--slate)', marginLeft: 2 }}>{Number(value).toFixed(1)}</span>
     </div>
   );
 }
@@ -189,7 +189,7 @@ function DocumentsModal({ user, onClose }) {
                     }}>
                       {f.name}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
                       Uploaded {formatDate(f.uploadedAt)}
                     </div>
                   </div>
@@ -268,7 +268,7 @@ function CreateUserModal({ onClose }) {
             Create user
           </button>
         </div>
-        <p style={{ fontSize: 11, color: 'var(--muted)', margin: '10px 0 0', textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '10px 0 0', textAlign: 'center' }}>
           Create user API is in progress.
         </p>
       </div>
@@ -398,7 +398,7 @@ export default function AdminUsers() {
                         width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                         background: 'var(--green-soft)', color: 'var(--green-dim)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 11, fontWeight: 700,
+                        fontSize: 12, fontWeight: 700,
                       }}>
                         {u.initials}
                       </div>
@@ -426,7 +426,7 @@ export default function AdminUsers() {
                   {/* Status */}
                   <td>
                     <span style={{
-                      fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+                      fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
                       background: u.isActive ? 'var(--green-soft)' : 'var(--bg)',
                       color: u.isActive ? 'var(--green-dim)' : 'var(--muted)',
                       border: `1px solid ${u.isActive ? 'var(--green-mid)' : 'var(--border)'}`,

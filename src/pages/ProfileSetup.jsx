@@ -16,14 +16,14 @@ function StagedFile({ file, onRemove }) {
         width: 32, height: 32, borderRadius: 6, flexShrink: 0,
         background: 'var(--green-soft)', color: 'var(--green-dim)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 9, fontWeight: 800,
+        fontSize: 12, fontWeight: 800,
       }}>{ext}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', truncate: true,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {file.name}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
           {(file.size / 1024).toFixed(0)} KB
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function ProfileSetup({ onDone }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 700,
               }}>{saving ? '✓' : i + 1}</div>
-              <div style={{ fontSize: 11, color: 'var(--slate)', fontWeight: 500, textAlign: 'center' }}>{label}</div>
+              <div style={{ fontSize: 12, color: 'var(--slate)', fontWeight: 500, textAlign: 'center' }}>{label}</div>
             </div>
           ))}
         </div>
