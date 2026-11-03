@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 52" fill="none">
+  <!-- Shield icon -->
+  <path d="M22 4L38 11v11c0 10-9.5 18.5-16 20.5C15.5 40.5 6 32 6 22V11L22 4z" fill="#1B3680"/>
+  <circle cx="22" cy="22" r="8.5" stroke="#00AABF" stroke-width="2" fill="none"/>
+  <circle cx="22" cy="22" r="5" stroke="#00AABF" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <path d="M17.5 22l3.5 3.5L27.5 17" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Wordmark: Assurify -->
+  <text x="50" y="33"
+    font-family="Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+    font-weight="700"
+    font-size="22"
+    letter-spacing="-0.5"
+    fill="#1B3680">Assurify</text>
+</svg>
