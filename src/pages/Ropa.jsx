@@ -10,9 +10,9 @@
  * Header "Add activity" button opens the multi-step add modal.
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Children, cloneElement, isValidElement, useState, useEffect, useMemo, useCallback, useId, useRef } from 'react';
 import {
-  Icons, Button, Modal, Progress, Badge, EmptyState, ErrorState, FilterChips, LoadingState, PageActions, SearchInput,
+  Icons, Button, Modal, Progress, Badge, EmptyState, ErrorState, FilterChips, LoadingState, PageActions, SearchInput, useDialog,
 } from '../ui';
 import { downloadCsv, formatDate, formatNumber, humanize } from '../lib/format';
 import {
@@ -284,26 +284,35 @@ const ADD_STEP_SECTIONS = [
   [...ROPA_SECTION_GROUPS.dpia, ...ROPA_SECTION_GROUPS.rights],
 ];
 
-function FieldLabel({ children, required }) {
+function FieldLabel({ children, required, htmlFor }) {
   return (
-    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
-      {children}{required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
+    <label className="field-label" htmlFor={htmlFor}>
+      {children}{required && <span className="field-required" aria-hidden="true">*</span>}
     </label>
   );
 }
 
+/* Wires the FieldLabel to the first form control inside the field */
 function FormField({ children, style }) {
-  return <div style={{ marginBottom: 14, ...style }}>{children}</div>;
+  const id = useId();
+  let controlTagged = false;
+  const isControl = (el) => ['input', 'select', 'textarea'].includes(el.type) || el.type === SelectInput;
+  const mapped = Children.map(children, child => {
+    if (!isValidElement(child)) return child;
+    if (child.type === FieldLabel) return cloneElement(child, { htmlFor: child.props.htmlFor ?? id });
+    if (!controlTagged && isControl(child)) { controlTagged = true; return cloneElement(child, { id: child.props.id ?? id }); }
+    return child;
+  });
+  return <div style={{ marginBottom: 14, ...style }}>{mapped}</div>;
 }
 
 function FormRow({ children }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>{children}</div>;
+  return <div className="form-grid" style={{ gap: '0 12px' }}>{children}</div>;
 }
 
-function SelectInput({ name, value, onChange, options, placeholder }) {
+function SelectInput({ id, name, value, onChange, options, placeholder }) {
   return (
-    <select className="input" name={name} value={value} onChange={onChange}
-      style={{ appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236575A0' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}>
+    <select className="select" id={id} name={name} value={value} onChange={onChange}>
       {placeholder && <option value="">{placeholder}</option>}
       {options.map(o => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}
     </select>
@@ -347,6 +356,8 @@ function MultiSelect({ options, selected, onChange, label }) {
 }
 
 function AddActivityModal({ onClose, onSaved }) {
+  const dialogRef = useRef(null);
+  useDialog(dialogRef, onClose);
   const [step, setStep]     = useState(0);
   const [form, setForm]     = useState({
     processing_activity: '', process_description: '', department: '', process_owner: '', status: 'active',
@@ -638,19 +649,20 @@ function AddActivityModal({ onClose, onSaved }) {
   ];
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" style={{ maxWidth: 640, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+    <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="add-activity-title" tabIndex={-1}
+        style={{ maxWidth: 640, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
 
         {/* Header */}
         <div className="modal-header">
-          <Icons.File size={18} style={{ color: 'var(--green)' }} />
-          <h3 className="modal-title">Add Processing Activity</h3>
-          <button className="icon-btn" onClick={onClose} style={{ border: 'none', background: 'transparent' }}><Icons.X size={16} /></button>
+          <span className="modal-header-icon"><Icons.File size={18} /></span>
+          <div className="modal-heading"><h3 className="modal-title" id="add-activity-title">Add processing activity</h3></div>
+          <button type="button" className="icon-btn modal-close" onClick={onClose} aria-label="Close dialog"><Icons.X size={16} /></button>
         </div>
 
         {/* Step indicators */}
-        <div style={{ padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', overflowX: 'auto' }}>
-          <div style={{ display: 'flex', gap: 0, paddingBottom: 12, paddingTop: 12, minWidth: 'max-content' }}>
+        <div style={{ padding: '0 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }} aria-label={`Step ${step + 1} of ${STEPS.length}`}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 8, paddingBottom: 12, paddingTop: 12 }}>
             {STEPS.map((s, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
@@ -681,12 +693,8 @@ function AddActivityModal({ onClose, onSaved }) {
         </div>
 
         {/* Body */}
-        <div className="modal-body" style={{ overflowY: 'auto', flex: 1, paddingTop: 14 }}>
-          {error && (
-            <div style={{ padding: '10px 14px', marginBottom: 14, borderRadius: 'var(--r-md)', background: 'var(--risk-high-bg)', color: 'var(--risk-high-text)', border: '1px solid var(--risk-high-border)', fontSize: 13 }}>
-              {error}
-            </div>
-          )}
+        <div className="modal-body" tabIndex={0} aria-label="Activity details" style={{ overflowY: 'auto', flex: 1, paddingTop: 14 }}>
+          {error && <div style={{ marginBottom: 14 }}><ErrorState title="Check this step" message={error} /></div>}
           {questionsError && (
             <div style={{ padding: '10px 14px', marginBottom: 14, borderRadius: 'var(--r-md)', background: 'var(--risk-high-bg)', color: 'var(--risk-high-text)', border: '1px solid var(--risk-high-border)', fontSize: 13 }}>
               Could not load the process questions: {questionsError}
@@ -706,8 +714,8 @@ function AddActivityModal({ onClose, onSaved }) {
             : <Button onClick={onClose}>Cancel</Button>}
           <div style={{ flex: 1 }} />
           {step < STEPS.length - 1
-            ? <Button variant="primary" onClick={next} disabled={questionsLoading || !!questionsError}>Next step →</Button>
-            : <Button variant="primary" onClick={handleSave} disabled={saving || questionsLoading || !!questionsError}>{saving ? 'Saving…' : 'Save activity'}</Button>}
+            ? <Button variant="primary" onClick={next} disabled={questionsLoading || !!questionsError}>Next step <Icons.ChevronRight size={15} /></Button>
+            : <Button variant="primary" onClick={handleSave} loading={saving} disabled={questionsLoading || !!questionsError}>Save activity</Button>}
         </div>
       </div>
     </div>

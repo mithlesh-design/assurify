@@ -1,3 +1,4 @@
+import { cloneElement, isValidElement, useId } from 'react';
 import {
   isRopaBoolean,
   isRopaMultiSelect,
@@ -15,13 +16,13 @@ function MultiSelectField({ options, selected = [], onChange }) {
       {options.map(option => {
         const active = values.includes(option);
         return (
-          <button key={option} type="button"
+          <button key={option} type="button" aria-pressed={active}
             onClick={() => onChange(active ? values.filter(value => value !== option) : [...values, option])}
             style={{
               fontSize: 12, padding: '4px 10px', borderRadius: 'var(--r-pill)', cursor: 'pointer', fontWeight: active ? 700 : 500,
               background: active ? 'var(--green-soft)' : 'var(--surface)',
-              color: active ? 'var(--green-dim)' : 'var(--slate)',
-              border: `1.5px solid ${active ? 'var(--green-mid)' : 'var(--border)'}`,
+              color: active ? 'var(--green-dim)' : 'var(--ink2)',
+              border: `1px solid ${active ? 'var(--green-mid)' : 'var(--border)'}`, minHeight: 32,
             }}>
             {option.replaceAll('_', ' ')}
           </button>
@@ -32,6 +33,7 @@ function MultiSelectField({ options, selected = [], onChange }) {
 }
 
 function QuestionField({ question, value, onChange }) {
+  const fieldId = useId();
   const options = ropaQuestionOptions(question);
   const label = question.display_text || question.field_name;
   const inputStyle = { width: '100%', boxSizing: 'border-box' };
@@ -70,13 +72,18 @@ function QuestionField({ question, value, onChange }) {
     );
   }
 
+  const multi = isRopaMultiSelect(question);
+  const control = isValidElement(input) && !multi
+    ? cloneElement(input, { id: fieldId, 'aria-describedby': question.question ? `${fieldId}-hint` : undefined, 'aria-required': question.is_required || undefined })
+    : input;
   return (
-    <div style={{ marginBottom: 14, minWidth: 0, gridColumn: isRopaText(question) || isRopaMultiSelect(question) ? '1 / -1' : undefined }}>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
-        {label}{question.is_required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
+    <div style={{ marginBottom: 14, minWidth: 0, gridColumn: isRopaText(question) || multi ? '1 / -1' : undefined }}
+      role={multi ? 'group' : undefined} aria-labelledby={multi ? `${fieldId}-label` : undefined}>
+      <label className="field-label" id={`${fieldId}-label`} htmlFor={multi ? undefined : fieldId}>
+        {label}{question.is_required && <span className="field-required" aria-hidden="true">*</span>}
       </label>
-      {question.question && <div style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 5 }}>{question.question}</div>}
-      {input}
+      {question.question && <div className="field-hint" id={`${fieldId}-hint`} style={{ marginTop: 0, marginBottom: 6 }}>{question.question}</div>}
+      {control}
     </div>
   );
 }
@@ -104,7 +111,7 @@ export default function RopaQuestionFields({ questions, sections, values, onChan
           {ROPA_SECTION_LABELS[group.section] ?? group.section}
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', columnGap: 12 }}>
+      <div className="form-grid" style={{ gap: '0 12px' }}>
         {group.questions.map(question => (
           <QuestionField key={question.id ?? question.field_name} question={question}
             value={values[question.field_name]}

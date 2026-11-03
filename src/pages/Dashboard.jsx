@@ -159,7 +159,7 @@ function localDateValue(date) {
 function displayDate(value) {
   if (!value) return 'Not recorded';
   const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.valueOf()) ? value : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return Number.isNaN(date.valueOf()) ? value : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function loadCommandPlan() {
   try { return { ...DEFAULT_ASSESSMENT_PLAN, ...JSON.parse(localStorage.getItem(COMMAND_PLAN_KEY) || '{}') }; }
@@ -242,7 +242,7 @@ function AssessmentCommandCenter({ controls, score, meetings, evidence, ropaSumm
   ].slice(0, 5);
   const stateClass = status => status.toLowerCase().replace(/[^a-z]+/g, '-');
 
-  return <section className="command-center" aria-label="DPDPA assessment command centre">
+  return <section className="command-center" aria-label="DPDPA assessment command center">
     <div className="cc-hero">
       <div className="cc-hero-top"><div><span className="cc-eyebrow"><Icons.Shield size={14}/> ASSESSMENT LIFECYCLE</span><h2>Current assessment</h2><p>Plan, delivery, evidence, and issues in one operational view.</p></div><div className="cc-hero-tools"><span className={`cc-forecast cc-forecast-${stateClass(forecast)}`}><i/>{forecast}</span><Button onClick={() => { setPlanDraft(plan); setShowPlan(true); }}>Update assessment plan</Button></div></div>
       <div className="cc-plan-strip"><div><span>Planned start</span><strong>{displayDate(plan.plannedStart)}</strong></div><div className="cc-plan-actual"><span>Actual start</span><strong>{actualStart ? displayDate(actualStart) : 'Not recorded'}</strong></div><div><span>Committed completion</span><strong>{displayDate(plan.targetDate)}</strong></div><div className="cc-countdown"><span>Time remaining</span><strong>{daysRemaining < 0 ? `${Math.abs(daysRemaining)} days overdue` : `${daysRemaining} days`}</strong></div></div>
@@ -324,7 +324,7 @@ function PageDashboard({ onNavigate, meetings = [], evidence = [], ropaSummary, 
     .slice(0, 8);
 
   const firstName = (user?.name ?? 'there').split(' ')[0];
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   if (controlsLoading) {
     return (

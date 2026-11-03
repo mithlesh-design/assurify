@@ -305,7 +305,7 @@ export default function PageProfile() {
         {/* Avatar */}
         <div style={{
           width: 80, height: 80, borderRadius: '50%', flexShrink: 0,
-          background: 'var(--green)', color: '#fff',
+          background: 'var(--green-dim)', color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em',
           border: '3px solid rgba(255,255,255,0.25)',

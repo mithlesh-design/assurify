@@ -173,7 +173,7 @@ export default function ProfileSetup({ onDone }) {
             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
               <div style={{
                 width: 28, height: 28, borderRadius: '50%',
-                background: 'var(--green)', color: 'white',
+                background: 'var(--green-dim)', color: 'white',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 700,
               }}>{saving ? '✓' : i + 1}</div>

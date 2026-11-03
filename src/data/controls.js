@@ -10,7 +10,7 @@ function ago(days, hours = 0) {
 export const OBL_META = [
   { id: 'OBL1', name: 'Consent management',       weight: 25 },
   { id: 'OBL2', name: 'Transparency & notice',    weight: 10 },
-  { id: 'OBL3', name: 'Data minimisation',        weight: 10 },
+  { id: 'OBL3', name: 'Data minimization',        weight: 10 },
   { id: 'OBL4', name: 'Data accuracy',            weight: 10 },
   { id: 'OBL5', name: 'Data fiduciary duties',    weight: 20 },
   { id: 'OBL6', name: 'Data principal rights',    weight: 10 },
@@ -163,7 +163,7 @@ export function createInitialControls() {
     /* ─── OBL3: Data minimisation ─── */
     {
       id: 'OBL3-C1', obl: 'OBL3',
-      name: 'Data minimisation policy',
+      name: 'Data minimization policy',
       req:  'DPDP Act §8(1)',
       desc: 'Formal policy documenting that only minimum necessary personal data is collected. Requires purpose-to-field justification mapping.',
       status: 'pending_review',

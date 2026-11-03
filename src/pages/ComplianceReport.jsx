@@ -23,10 +23,10 @@ const STATUS_STYLE = {
 const STATUS_DEFS = {
   implemented:       'Control fully in place; evidence reviewed and approved by the reviewer.',
   in_progress:       'Implementation commenced; evidence partially submitted and under review.',
-  pending_review:    'Evidence submitted by organisation; awaiting reviewer assessment.',
-  needs_discussion:  'Open question raised by the reviewer; awaiting resolution with the organisation.',
+  pending_review:    'Evidence submitted by the organization; awaiting reviewer assessment.',
+  needs_discussion:  'Open question raised by the reviewer; awaiting resolution with the organization.',
   blocked:           'Critical issue identified; control cannot proceed until resolved.',
-  not_applicable:    "Control does not apply to this organisation's processing activities.",
+  not_applicable:    "Control does not apply to this organization's processing activities.",
 };
 
 const PRIORITY_RANK = { blocked: 0, needs_discussion: 1, pending_review: 2, in_progress: 3 };
@@ -95,8 +95,8 @@ export default function ComplianceReport({ onNavigate, autoPrint = false, onPrin
   const discuss = controls.filter(c => c.status === 'needs_discussion').length;
   const blocked = controls.filter(c => c.status === 'blocked').length;
 
-  const company  = tenant?.name || user?.company || 'Your Organisation';
-  const today    = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const company  = tenant?.name || user?.company || 'Your organization';
+  const today    = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   const scColor  = score >= 80 ? 'var(--green)' : score >= 50 ? '#F59E0B' : '#EF4444';
   const scText   = score >= 80 ? 'var(--green-dim)' : score >= 50 ? '#B45309' : '#991B1B';
 
@@ -195,7 +195,7 @@ export default function ComplianceReport({ onNavigate, autoPrint = false, onPrin
 
               <div className="rcov-meta">
                 <div className="rcov-meta-item">
-                  <div className="rcov-meta-label">Organisation</div>
+                  <div className="rcov-meta-label">Organization</div>
                   <div className="rcov-meta-val">{company}</div>
                 </div>
                 <div className="rcov-meta-item">
@@ -447,7 +447,7 @@ export default function ComplianceReport({ onNavigate, autoPrint = false, onPrin
                 <div className="rst">6. Recommendations roadmap</div>
                 <p style={{ fontSize: 13.5, color: 'var(--ink2)', lineHeight: 1.7, margin: '0 0 16px' }}>
                   Remediation actions are grouped across three time horizons to support structured and
-                  prioritised implementation.
+                  prioritized implementation.
                 </p>
                 {[
                   { key: 'immediate', label: 'Immediate Actions (0–30 Days)', cls: 'immediate', items: immediate },
@@ -496,7 +496,7 @@ export default function ComplianceReport({ onNavigate, autoPrint = false, onPrin
                   <div className="rcert-field-val">{reviewerName}</div>
                 </div>
                 <div>
-                  <div className="rcert-field-lbl">Organisation Assessed</div>
+                  <div className="rcert-field-lbl">Organization assessed</div>
                   <div className="rcert-field-val">{company}</div>
                 </div>
                 <div>
@@ -508,7 +508,7 @@ export default function ComplianceReport({ onNavigate, autoPrint = false, onPrin
                   <div className="rcert-field-val" style={{ color: scText }}>{reportStatus}</div>
                 </div>
                 <div>
-                  <div className="rcert-field-lbl">Organisation</div>
+                  <div className="rcert-field-lbl">Organization</div>
                   <div className="rcert-field-val">Appzlogic GRC</div>
                 </div>
                 <div>
@@ -536,7 +536,7 @@ export default function ComplianceReport({ onNavigate, autoPrint = false, onPrin
                     fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase',
                     letterSpacing: '0.05em', marginBottom: 2,
                   }}>
-                    Authorised for Appzlogic GRC
+                    Authorized for Appzlogic GRC
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{today}</div>
                 </div>
@@ -544,7 +544,7 @@ export default function ComplianceReport({ onNavigate, autoPrint = false, onPrin
 
               <div className="rcert-disclaimer">
                 Disclaimer: This report is prepared solely for the use of {company} and Appzlogic GRC.
-                It reflects the compliance posture based on evidence provided by the organisation as on
+                It reflects the compliance posture based on evidence provided by the organization as of
                 the assessment date. Appzlogic GRC does not accept liability for inaccuracies arising
                 from incomplete or misleading information provided during assessment. This report does
                 not constitute legal advice.

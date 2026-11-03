@@ -33,8 +33,8 @@ function formatDate(iso) {
   if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
   if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
   if (diff < 604800000) return Math.floor(diff / 86400000) + 'd ago';
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
 /* Activity feed entries come back as { type: 'comment' | 'log', created_at, data }.
@@ -398,7 +398,7 @@ export default function VendorControlPanel({ subControl, onClose }) {
         </div>
 
         {/* ── Body ── */}
-        <div className="cp-body" ref={bodyRef}>
+        <div className="cp-body" ref={bodyRef} tabIndex={0} aria-label="Control details">
 
           {/* Chat tab */}
           {activeTab === 'chat' && (
